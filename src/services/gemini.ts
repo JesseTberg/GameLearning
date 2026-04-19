@@ -83,6 +83,7 @@ export async function analyzeGameRegion(base64Image: string, grammarPoints: Gram
        - word: the original text
        - reading: the reading (like Furigana/Pinyin) if applicable
        - translation: a single-word translation
+       - isFunctional: boolean, true if this is a particle, marker, or functional word (like 'no', 'wa', 'ga', 'the', 'of', etc.)
     4. GRAMMAR AUDIT: Check if any of these specific grammar points appear in the text:
     ${grammarContext}
     
@@ -121,6 +122,7 @@ export async function analyzeGameRegion(base64Image: string, grammarPoints: Gram
                 word: { type: Type.STRING },
                 reading: { type: Type.STRING },
                 translation: { type: Type.STRING },
+                isFunctional: { type: Type.BOOLEAN },
               },
             },
           },
@@ -212,4 +214,67 @@ export async function performLensAnalysis(base64Image: string) {
   });
 
   return JSON.parse(response.text || '{"blocks": []}');
+}
+
+export async function analyzeText(text: string, grammarPoints: GrammarPoint[]) {
+  const ai = getAiClient();
+  const grammarContext = grammarPoints.map(p => `- ${p.name}: ${p.description} (Pattern: ${p.pattern})`).join('\n');
+  
+  const prompt = `
+    Analyze this text for language learning.
+    
+    1. TRANSLATE: Provide a natural translation of the full text.
+    2. TOKENS: Break down the text into individual words or small meaningful segments. For each segment, provide:
+       - word: the original text
+       - reading: the reading (like Furigana/Pinyin) if applicable
+       - translation: a single-word translation
+       - isFunctional: boolean, true if this is a particle, marker, or functional word (like 'no', 'wa', 'ga', 'the', 'of', etc.)
+    3. GRAMMAR AUDIT: Check if any of these specific grammar points appear in the text:
+    ${grammarContext}
+
+    Format the response as JSON.
+  `;
+
+  const response = await ai.models.generateContent({
+    model: "gemini-3-flash-preview",
+    contents: [{ parts: [{ text: prompt + "\n\nTEXT TO ANALYZE: " + text }] }],
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          translation: { type: Type.STRING },
+          words: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                word: { type: Type.STRING },
+                reading: { type: Type.STRING },
+                translation: { type: Type.STRING },
+                isFunctional: { type: Type.BOOLEAN },
+              },
+            },
+          },
+          grammarMatches: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                pointName: { type: Type.STRING },
+                matchedText: { type: Type.STRING },
+                explanation: { type: Type.STRING },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const parsed = JSON.parse(response.text || '{}');
+  return {
+    ...parsed,
+    extractedText: text
+  };
 }

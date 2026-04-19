@@ -4,6 +4,7 @@ import { cn } from '../../lib/utils';
 
 interface CaptureCanvasProps {
   isCapturing: boolean;
+  isLensVisible?: boolean;
   videoRef: React.RefObject<HTMLVideoElement | null>;
   containerRef: React.RefObject<HTMLDivElement | null>;
   isSelecting: boolean;
@@ -21,6 +22,7 @@ interface CaptureCanvasProps {
 
 export const CaptureCanvas: React.FC<CaptureCanvasProps> = ({
   isCapturing,
+  isLensVisible = false,
   videoRef,
   containerRef,
   isSelecting,
@@ -41,8 +43,15 @@ export const CaptureCanvas: React.FC<CaptureCanvasProps> = ({
     if (!container) return;
 
     const handleWheelPrevent = (e: WheelEvent) => {
+      // If we are showing Lens, check if we're over the scrollable results list
+      if (isLensVisible) {
+        const target = e.target as HTMLElement;
+        // Don't prevent if we're inside the scrollable list
+        if (target.closest('.custom-scrollbar')) return;
+      }
+
       // If we are capturing, we want the zoom logic to work but NOT the page to scroll
-      if (isCapturing) {
+      if (isCapturing || isLensVisible) {
         e.preventDefault();
       }
     };
@@ -52,7 +61,7 @@ export const CaptureCanvas: React.FC<CaptureCanvasProps> = ({
     return () => {
       container.removeEventListener('wheel', handleWheelPrevent);
     };
-  }, [isCapturing, containerRef]);
+  }, [isCapturing, isLensVisible, containerRef]);
 
   return (
     <div 
@@ -63,7 +72,7 @@ export const CaptureCanvas: React.FC<CaptureCanvasProps> = ({
       onWheel={onWheel}
       className={cn(
         "relative aspect-video bg-black rounded-xl border border-border overflow-hidden shadow-2xl flex items-center justify-center group mb-8",
-        isCapturing ? "cursor-crosshair" : "cursor-default"
+        isCapturing && !isLensVisible ? "cursor-crosshair" : "cursor-default"
       )}
     >
       <video 

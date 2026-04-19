@@ -10,6 +10,29 @@
   --color-border: #374151;
   --color-panel: #1F2937;
   --color-highlight: rgba(37, 99, 235, 0.1);
+
+  /* Word Breakdown Colors */
+  --color-token-standard: var(--color-text-main);
+  --color-token-functional: var(--color-text-dim);
+  --color-token-grammar: #F59E0B; /* amber-500 */
+  --color-token-hover: #FBBF24; /* amber-400 */
   
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #4B5563;
 }

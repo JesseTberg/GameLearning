@@ -28,7 +28,11 @@ export const TokenDisplay: React.FC<TokenDisplayProps> = ({ tokens, grammarMatch
           >
             <span className={cn(
               "cursor-pointer transition-all decoration-2 underline-offset-8",
-              grammarMatch ? "text-amber-500 underline decoration-amber-500/50" : "hover:text-amber-400"
+              grammarMatch 
+                ? "text-token-grammar underline decoration-token-grammar/50" 
+                : token.isFunctional 
+                  ? "text-token-functional/80 font-medium hover:text-white" 
+                  : "text-token-standard hover:text-token-hover"
             )}>
               {token.word}
             </span>

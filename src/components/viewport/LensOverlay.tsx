@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, RefreshCw, Copy, Plus, Languages, Type, LayoutTemplate } from 'lucide-react';
+import { X, RefreshCw, Copy, Plus, Languages, Type, LayoutTemplate, Sparkles } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { LensResult } from '../../types';
 import { cn } from '../../lib/utils';
@@ -9,6 +9,7 @@ interface LensOverlayProps {
   result: LensResult;
   onClose: () => void;
   onAddFlashcard: (text: string, translation: string) => void;
+  onBreakdown?: (text: string) => void;
   isLoading?: boolean;
 }
 
@@ -16,6 +17,7 @@ export const LensOverlay: React.FC<LensOverlayProps> = ({
   result, 
   onClose, 
   onAddFlashcard,
+  onBreakdown,
   isLoading 
 }) => {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
@@ -167,7 +169,18 @@ export const LensOverlay: React.FC<LensOverlayProps> = ({
                     <p className="text-sm font-bold text-blue-400 leading-snug italic">"{block.translatedText}"</p>
                   </div>
 
-                  <div className="pt-2 flex items-center justify-end">
+                  <div className="pt-2 flex items-center justify-end gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      onClick={() => onBreakdown?.(block.originalText)}
+                      className={cn(
+                        "h-7 px-3 text-[9px] gap-2 rounded transition-all",
+                        hoveredIdx === idx ? "bg-amber-600 text-white" : "bg-white/5 text-amber-500/80"
+                      )}
+                    >
+                      <Sparkles size={10} /> Breakdown
+                    </Button>
                     <Button 
                       size="sm" 
                       variant="ghost"

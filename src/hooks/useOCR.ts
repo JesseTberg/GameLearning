@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { analyzeGameRegion, performLensAnalysis } from '../services/gemini';
+import { analyzeGameRegion, performLensAnalysis, analyzeText } from '../services/gemini';
 import { GrammarPoint, CapturedText, LensResult } from '../types';
 
 export function useOCR(grammarPoints: GrammarPoint[], setCapturedTexts: React.Dispatch<React.SetStateAction<CapturedText[]>>) {
@@ -53,6 +53,20 @@ export function useOCR(grammarPoints: GrammarPoint[], setCapturedTexts: React.Di
     }
   }, []);
 
+  const performTextAnalysis = useCallback(async (text: string) => {
+    setIsLoading(true);
+    try {
+      const result = await analyzeText(text, grammarPoints);
+      setCurrentAnalysis(result);
+      return result;
+    } catch (err: any) {
+      console.error("Text analysis failed:", err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [grammarPoints]);
+
   return {
     isLoading,
     currentAnalysis,
@@ -60,6 +74,7 @@ export function useOCR(grammarPoints: GrammarPoint[], setCapturedTexts: React.Di
     setLensResult,
     performOCR,
     performLens,
+    performTextAnalysis,
     setCurrentAnalysis
   };
 }

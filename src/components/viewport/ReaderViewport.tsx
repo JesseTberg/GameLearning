@@ -67,8 +67,14 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
     lensResult,
     setLensResult,
     performOCR,
-    performLens
+    performLens,
+    performTextAnalysis,
+    setCurrentAnalysis
   } = useOCR(grammarPoints, setCapturedTexts);
+
+  const handleLensBlockClick = (text: string) => {
+    performTextAnalysis(text);
+  };
 
   // Persistence effect
   useEffect(() => {
@@ -144,6 +150,7 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
 
   // Handle Right Click Panning
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (isLensVisible) return;
     if (e.button === 2) {
       e.preventDefault();
       setIsPanning(true);
@@ -189,7 +196,7 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
   };
 
   const handleWheel = (e: React.WheelEvent) => {
-    if (!isCapturing || !containerRef.current) return;
+    if (!isCapturing || !containerRef.current || isLensVisible) return;
     
     // Zoom in/out factor
     const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
@@ -262,7 +269,9 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
       front: word.word || '',
       reading: word.reading || '',
       back: word.translation || '',
-      context: currentAnalysis?.extractedText || ''
+      context: word.isLensBlock 
+        ? (word.originalWord ? `Source: ${word.originalWord}` : 'Visual Capture')
+        : (currentAnalysis?.extractedText || '')
     });
   };
 
@@ -308,6 +317,7 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
 
           <CaptureCanvas 
             isCapturing={isCapturing}
+            isLensVisible={isLensVisible}
             videoRef={videoRef}
             containerRef={containerRef}
             isSelecting={isSelecting}
@@ -326,6 +336,7 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
                 result={lensResult} 
                 onClose={() => setIsLensVisible(false)} 
                 isLoading={isLoading}
+                onBreakdown={handleLensBlockClick}
                 onAddFlashcard={(text, translation) => {
                    setPrepCard({
                      front: text,
@@ -339,9 +350,12 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
           
           <MainAnalysis 
             currentAnalysis={currentAnalysis} 
+            lensResult={lensResult}
+            isLoading={isLoading}
             showTranslation={showTranslation} 
             onToggleTranslation={onToggleTranslation}
             onWordClick={onTransferWord}
+            onBlockClick={handleLensBlockClick}
           />
         </div>
 
