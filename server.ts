@@ -1,6 +1,5 @@
 import express from "express";
 import path from "path";
-import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import helmet from "helmet";
 import { GoogleGenAI } from "@google/genai";
@@ -8,44 +7,34 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const projectRoot = process.cwd();
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // 1. Strict Content Security Policy
   app.use(
     helmet({
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          // Restrict connect-src to 'self' to protect the key, but allow WebSockets for HMR
           connectSrc: ["'self'", "ws://localhost:*", "ws://127.0.0.1:*", "wss://localhost:*", "wss://127.0.0.1:*"],
           scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
           styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
           imgSrc: ["'self'", "data:", "blob:", "https://picsum.photos"],
           fontSrc: ["'self'", "https://fonts.gstatic.com"],
           objectSrc: ["'none'"],
-          // Allow framing so the preview works in AI Studio
           frameAncestors: ["*"],
           upgradeInsecureRequests: [],
         },
       },
       crossOriginEmbedderPolicy: false, 
-      // Disable X-Frame-Options to allow framing in modern browsers (covered by frameAncestors above)
       frameguard: false,
     })
   );
 
   app.use(express.json({ limit: '10mb' }));
 
-  /**
-   * 2. Secure Pass-Through Proxy for Gemini
-   * This endpoint DOES NOT hold a master key. It expects the user's personal key in a header.
-   * By routing all AI calls through here, we can maintain connect-src 'self' security.
-   */
   app.post("/api/ai-proxy", async (req, res) => {
     try {
       const { provider = 'gemini', prompt, model, mimeType, base64Data, config } = req.body;
@@ -70,22 +59,20 @@ async function startServer() {
         }
 
         const result = await ai.models.generateContent({
-          model: model || "gemini-3-flash-preview",
-          contents: [{ parts }],
+          model: model || "gemini-2.0-flash",
+          contents: [{ role: 'user', parts }],
           config,
         });
 
         return res.json({ text: result.text });
       }
       
-      // Placeholder for OpenAI or others
       if (provider === 'openai') {
         return res.status(501).json({ error: "OpenAI integration is architected but currently in standby. Switch back to Gemini." });
       }
 
       res.status(400).json({ error: `Unsupported provider: ${provider}` });
     } catch (error: any) {
-      // Detailed logging for server-side debugging
       console.error("[Gemini Proxy Error Details]:", {
         message: error.message,
         stack: error.stack,
@@ -102,7 +89,6 @@ async function startServer() {
         });
       }
       
-      // Handle rate limits specifically
       if (errorMsg.includes("429") || errorMsg.includes("Too Many Requests")) {
         return res.status(429).json({ 
           error: "Your API key has reached its rate limit. Please wait a moment before trying again." 
@@ -113,7 +99,6 @@ async function startServer() {
     }
   });
 
-  // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
