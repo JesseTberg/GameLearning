@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { BookOpen, Languages, Layers, History, Layout, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import { BookOpen, Languages, Layers, History, Layout, ChevronLeft, ChevronRight, Settings, Github } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Panel } from './ui/Panel';
 
@@ -33,7 +33,7 @@ export const NavSidebar: React.FC<NavSidebarProps> = ({ isCollapsed, onToggle, o
               <Languages className="text-white" size={18} />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight text-white leading-none">Lingo<span className="text-blue-400">Companion</span></h1>
+              <h1 className="text-lg font-bold tracking-tight text-white leading-none">Game<span className="text-blue-400">Learning</span></h1>
               <div className="text-[9px] text-gray-400 uppercase tracking-widest mt-1">Study Assistant</div>
             </div>
           </div>
@@ -83,6 +83,19 @@ export const NavSidebar: React.FC<NavSidebarProps> = ({ isCollapsed, onToggle, o
           <Settings size={20} />
           {!isCollapsed && <span className="font-semibold text-sm">Settings</span>}
         </button>
+
+        <a
+          href="https://github.com/JesseTberg/GameLearning"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            "flex items-center gap-4 p-3 rounded-lg transition-all text-gray-400 hover:bg-white/5 hover:text-white w-full",
+            isCollapsed && "justify-center"
+          )}
+        >
+          <Github size={20} />
+          {!isCollapsed && <span className="font-semibold text-sm">GitHub Repo</span>}
+        </a>
         
         {!isCollapsed && (
           <div className="text-[9px] text-gray-500 uppercase tracking-widest text-center opacity-50">

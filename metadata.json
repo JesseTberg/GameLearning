@@ -1,5 +1,5 @@
 {
-  "name": "LingoCompanion",
+  "name": "Game Learning",
   "description": "A simple language learning companion. Understand text on your screen with ease, capture new words, and learn grammar while you browse or play.",
   "requestFramePermissions": ["display-capture"]
 }

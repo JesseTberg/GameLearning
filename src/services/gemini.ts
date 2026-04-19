@@ -6,7 +6,7 @@ let aiClient: any = null;
 function getAiClient() {
   if (typeof window === 'undefined') return null;
 
-  const localKey = localStorage.getItem('GEMINI_API_KEY');
+  const localKey = sessionStorage.getItem('GEMINI_API_KEY');
   
   if (!localKey || localKey === 'undefined' || localKey === 'MY_GEMINI_API_KEY') {
     throw new Error('API Key is missing. Please set your own Gemini API Key in the Settings menu (sidebar bottom).');

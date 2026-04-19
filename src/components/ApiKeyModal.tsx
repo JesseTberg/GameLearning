@@ -14,12 +14,12 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose }) => 
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
-    const savedKey = localStorage.getItem('GEMINI_API_KEY');
+    const savedKey = sessionStorage.getItem('GEMINI_API_KEY');
     if (savedKey) setApiKey(savedKey);
   }, [isOpen]);
 
   const handleSave = () => {
-    localStorage.setItem('GEMINI_API_KEY', apiKey);
+    sessionStorage.setItem('GEMINI_API_KEY', apiKey);
     setIsSaved(true);
     setTimeout(() => {
       setIsSaved(false);
@@ -30,7 +30,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose }) => 
   };
 
   const handleClear = () => {
-    localStorage.removeItem('GEMINI_API_KEY');
+    sessionStorage.removeItem('GEMINI_API_KEY');
     setApiKey('');
   };
 
@@ -83,7 +83,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose }) => 
                     <Key size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                   </div>
                   <p className="text-[10px] text-gray-500 mt-3 leading-relaxed">
-                    Your key is stored locally in your browser and is never sent to our servers. 
+                    Your key is stored in session storage and is cleared when you close the tab. 
                     You can get a free key from the Google AI Studio.
                   </p>
                 </div>

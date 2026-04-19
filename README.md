@@ -1,49 +1,62 @@
-# LingoCompanion
+# Game Learning
 
-LingoCompanion is an AI-powered language learning assistant that helps you learn from real-world content through OCR (Optical Character Recognition), real-time grammar analysis, and a structured flashcard system.
+Game Learning is an AI-powered language learning assistant specifically designed to help you learn languages through games, media, and real-world content. It utilizes OCR (Optical Character Recognition) and the Google Gemini API to provide real-time translations, word-level breakdowns, and grammar analysis.
+
+**Live Demo**: [https://game-learning-umber.vercel.app/](https://game-learning-umber.vercel.app/)
 
 ## Features
 
-- **OCR Intelligent Reader**: Capture screenshots of text (Japanese/Chinese/etc.) and get instant word-level breakdowns, readings (Furigana/Pinyin), and translations.
-- **Grammar Analysis**: Automatically detects grammar patterns in captured text and provides explanations.
-- **Flashcard Collection**: Save words directly from scans into your collection.
-- **Deck Management**: Organize your flashcards into custom decks (e.g., "Manga Vocabulary", "Business Terms").
-- **Study Mode**: Interactive study sessions with shuffled cards, hidable readings, and contextual reminders.
-- **History Archive**: Review all past scans and create flashcards from them anytime.
+- **Visual Intelligent Reader**: Capture screenshots of your game or screen and get instant OCR results with word-level breakdowns, readings (Furigana/Pinyin), and translations.
+- **Smart Grammar Audit**: Automatically detects registered grammar patterns in captured screen regions and provides contextual explanations.
+- **Interactive Word Breakdown**: Tokens are color-coded to distinguish between standard vocabulary and functional grammar particles.
+- **Flashcard Collection**: Save words directly from visual captures into your personal vocabulary collection with one click.
+- **Deck Management**: Organize your flashcards into custom decks (e.g., "RPG Terms", "Casual Dialogue").
+- **Study Mode**: Interactive study sessions with shuffled cards, hidable readings, and persistent study state.
+- **History Archive**: Review all past scans and create flashcards from previous captures at any time.
+- **Privacy-First API Key**: Strictly uses **Session Storage** for your Gemini API key, ensuring it is never saved permanently in the browser and is cleared on tab close.
 
 ## Project Structure
 
 ```text
 src/
 ├── components/          # React Components
-│   ├── ui/              # Reusable base UI components (Button, Card, Grid, etc.)
-│   ├── viewport/        # Reader view: Canvas, OCR, Quick Flashcard Prep
-│   ├── flashcards/      # Flashcard collection, Deck management, Study mode
-│   ├── grammar/         # Grammar list and pattern matching
-│   ├── history/         # Past scan archive
-│   └── NavSidebar.tsx   # Main application navigation
-├── hooks/               # Custom React hooks (useScreenCapture, etc.)
-├── lib/                 # Utilities (Tailwind merge helpers)
-├── services/            # API integration (Gemini AI service)
-├── types.ts             # TypeScript interfaces and types
-├── App.tsx              # Main application logic and state management
-└── main.tsx             # Entry point
+│   ├── ui/              # Reusable base UI components (Button, Panel, etc.)
+│   ├── viewport/        # The Core Reader: Screen capture, Text Overlay, and Word Breakdown
+│   ├── flashcards/      # Flashcard system: Study mode, Deck management
+│   ├── grammar/         # Grammar list, PDF parsing, and pattern matching
+│   ├── history/         # Archive of past scans for later study
+│   ├── ApiKeyModal.tsx  # Secure API Settings management
+│   └── NavSidebar.tsx   # Sidebar navigation and external links
+├── hooks/               # Custom hooks for Screen Capture and AI state
+├── lib/                 # Tailwind utility helpers
+├── services/            # logic for Google Gemini SDK integration
+├── types.ts             # Global TypeScript interfaces
+├── constants.ts         # Shared constant definitions
+├── App.tsx              # Main routing and global state management
+└── index.css            # Custom theme variables and Tailwind imports
 ```
 
-## Setup
+## Getting Started
 
-1. **API Key**: This application requires a Google Gemini API Key.
-2. **Environment**: Create a `.env` file based on `.env.example` or enter your key in the application settings.
-3. **Run**:
+1. **Obtain API Key**: Get a free API key from [Google AI Studio](https://aistudio.google.com/).
+2. **Setup**:
    ```bash
    npm install
+   ```
+3. **Run Locally**:
+   ```bash
    npm run dev
    ```
+4. **Configuration**: Open the application, go to **Settings** in the sidebar, and paste your Gemini API key. The key is stored in your session and will clear when you close the tab.
 
 ## Tech Stack
 
-- **Frontend**: React 18, Vite, TypeScript
-- **Styling**: Tailwind CSS
-- **Animations**: Framer Motion (motion/react)
+- **Framework**: React 18 + Vite + TypeScript
+- **Styling**: Tailwind CSS (Custom color tokens)
+- **Animations**: Framer Motion
 - **Icons**: Lucide React
-- **AI**: Google Gemini Pro Vision (for OCR and translation)
+- **AI Core**: Google Gemini Pro (Flash 1.5/3.0) via `@google/genai`
+- **Deployment**: Static site hosting (compatible with Vercel/Netlify)
+
+## GitHub Repository
+[https://github.com/JesseTberg/GameLearning](https://github.com/JesseTberg/GameLearning)
