@@ -66,9 +66,9 @@ export const ViewportHeader: React.FC<ViewportHeaderProps> = ({
             <span className="text-[10px] w-10 text-blue-400 font-bold">{(zoom * 100).toFixed(0)}%</span>
             <button 
               onClick={onResetZoom}
-              className="px-2 py-0.5 rounded bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 text-[8px] font-bold uppercase transition-all opacity-0 group-hover:opacity-100"
+              className="px-3 py-1 rounded bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 text-[10px] font-bold uppercase transition-all"
             >
-              Reset
+              Reset Zoom
             </button>
           </div>
         )}

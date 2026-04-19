@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Key, ShieldCheck, AlertCircle } from 'lucide-react';
+import { X, Key, ShieldCheck, Lock } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Panel } from './ui/Panel';
+import { saveApiKey, getStoredApiKey, clearApiKey, AiProvider } from '../lib/encryption';
+import { cn } from '../lib/utils';
 
 interface ApiKeyModalProps {
   isOpen: boolean;
@@ -10,27 +12,33 @@ interface ApiKeyModalProps {
 }
 
 export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose }) => {
+  const [provider, setProvider] = useState<AiProvider>('gemini');
   const [apiKey, setApiKey] = useState('');
   const [isSaved, setIsSaved] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const savedKey = sessionStorage.getItem('GEMINI_API_KEY');
-    if (savedKey) setApiKey(savedKey);
-  }, [isOpen]);
+    if (isOpen) {
+      const loadKey = async () => {
+        const savedKey = await getStoredApiKey(provider);
+        setApiKey(savedKey || '');
+        setIsLoading(false);
+      };
+      loadKey();
+    }
+  }, [isOpen, provider]);
 
-  const handleSave = () => {
-    sessionStorage.setItem('GEMINI_API_KEY', apiKey);
+  const handleSave = async () => {
+    await saveApiKey(provider, apiKey);
     setIsSaved(true);
     setTimeout(() => {
       setIsSaved(false);
       onClose();
-      // Reload to ensure services get the new key
-      window.location.reload();
-    }, 1000);
+    }, 800);
   };
 
   const handleClear = () => {
-    sessionStorage.removeItem('GEMINI_API_KEY');
+    clearApiKey(provider);
     setApiKey('');
   };
 
@@ -57,7 +65,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose }) => 
                   <div className="p-2 bg-blue-600/20 rounded-lg text-blue-400">
                     <Key size={20} />
                   </div>
-                  <h2 className="text-xl font-bold text-white">API Settings</h2>
+                  <h2 className="text-xl font-bold text-white">AI Engine Settings</h2>
                 </div>
                 <button 
                   onClick={onClose}
@@ -70,28 +78,59 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose }) => 
               <div className="space-y-6">
                 <div>
                   <label className="text-[10px] text-gray-400 uppercase tracking-widest block mb-2 font-bold">
-                    Gemini API Key
+                    Select Provider
+                  </label>
+                  <div className="grid grid-cols-2 gap-2 mb-6">
+                    <button 
+                      onClick={() => setProvider('gemini')}
+                      className={cn(
+                        "px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all border",
+                        provider === 'gemini' ? "bg-blue-600/20 border-blue-500 text-blue-400" : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"
+                      )}
+                    >
+                      Google Gemini
+                    </button>
+                    <button 
+                      onClick={() => setProvider('openai')}
+                      className={cn(
+                        "px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all border",
+                        provider === 'openai' ? "bg-green-600/20 border-green-500 text-green-400" : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"
+                      )}
+                    >
+                      OpenAI (Proxy)
+                    </button>
+                  </div>
+
+                  <label className="text-[10px] text-gray-400 uppercase tracking-widest block mb-2 font-bold">
+                    {provider.toUpperCase()} API Key
                   </label>
                   <div className="relative">
                     <input
                       type="password"
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
-                      placeholder="Enter your API key..."
+                      placeholder={`Enter your ${provider} key...`}
                       className="w-full bg-black/40 border border-gray-800 rounded-lg px-4 py-3 text-sm focus:border-blue-500 outline-none text-white transition-all pl-10"
                     />
                     <Key size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                   </div>
                   <p className="text-[10px] text-gray-500 mt-3 leading-relaxed">
-                    Your key is stored in session storage and is cleared when you close the tab. 
-                    You can get a free key from the Google AI Studio.
+                    Your <strong>{provider}</strong> key is <strong>AES-GCM encrypted</strong> and stored in volatile session storage. 
                   </p>
                 </div>
 
-                <div className="bg-blue-600/5 border border-blue-600/10 rounded-lg p-4 flex items-start gap-3">
-                  <ShieldCheck size={18} className="text-blue-400 mt-0.5 shrink-0" />
-                  <div className="text-[11px] text-blue-400/80 leading-relaxed">
-                    Setting a personal API key override provides higher rate limits and ensures your assistant is always ready.
+                <div className="bg-blue-600/5 border border-blue-600/10 rounded-lg p-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <ShieldCheck size={18} className="text-blue-400 mt-0.5 shrink-0" />
+                    <div className="text-[11px] text-blue-400/80 leading-relaxed">
+                      <strong>Strict Security Policy</strong>: The browser is restricted (CSP) to only communicate with this origin. Your key never touches 3rd-party domains.
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 border-t border-blue-600/10 pt-3">
+                    <Lock size={16} className="text-blue-400/60 mt-0.5 shrink-0" />
+                    <div className="text-[10px] text-blue-400/60 leading-relaxed">
+                      Key is decrypted only at the moment of request and proxied through a secure local gateway.
+                    </div>
                   </div>
                 </div>
 

@@ -1,27 +1,48 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { Type } from "@google/genai";
 import { GrammarPoint } from "../types";
+import { getStoredApiKey } from "../lib/encryption";
 
-let aiClient: any = null;
+/**
+ * Enhanced secure caller that decrypts the user's key at the last possible moment
+ * and routes through the local proxy to satisfy the strict CSP connect-src 'self' rule.
+ */
+async function callGeminiThroughProxy(params: {
+  prompt: string;
+  model?: string;
+  mimeType?: string;
+  base64Data?: string;
+  config?: any;
+}) {
+  const provider = (window as any)._AI_PROVIDER || 'gemini';
+  const decryptedKey = await getStoredApiKey(provider);
 
-function getAiClient() {
-  if (typeof window === 'undefined') return null;
-
-  const localKey = sessionStorage.getItem('GEMINI_API_KEY');
-  
-  if (!localKey || localKey === 'undefined' || localKey === 'MY_GEMINI_API_KEY') {
-    throw new Error('API Key is missing. Please set your own Gemini API Key in the Settings menu (sidebar bottom).');
+  if (!decryptedKey) {
+    throw new Error(`${provider.toUpperCase()} API Key is missing. Check your Settings.`);
   }
 
-  if (!aiClient) {
-    aiClient = new GoogleGenAI({ apiKey: localKey });
+  const response = await fetch("/api/ai-proxy", {
+    method: "POST",
+    headers: { 
+      "Content-Type": "application/json",
+      "x-api-key": decryptedKey 
+    },
+    body: JSON.stringify({
+      ...params,
+      provider,
+      model: params.model || (window as any)._AI_MODEL || "gemini-3-flash-preview"
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || `Request failed with status ${response.status}`);
   }
-  return aiClient;
+
+  const data = await response.json();
+  return data.text;
 }
 
 export async function parseGrammarFromPdf(pdfBase64: string): Promise<GrammarPoint[]> {
-  const ai = getAiClient();
-  if (!ai) throw new Error("Client initialization failed");
-  
   const prompt = `
     Analyze this document and extract key grammar points for someone learning the language.
     For each grammar point, provide:
@@ -32,21 +53,10 @@ export async function parseGrammarFromPdf(pdfBase64: string): Promise<GrammarPoi
     Respond with ONLY a JSON array of these objects.
   `;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: [
-      {
-        parts: [
-          { text: prompt },
-          {
-            inlineData: {
-              mimeType: "application/pdf",
-              data: pdfBase64,
-            },
-          },
-        ],
-      },
-    ],
+  const text = await callGeminiThroughProxy({
+    prompt,
+    mimeType: "application/pdf",
+    base64Data: pdfBase64,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -64,7 +74,7 @@ export async function parseGrammarFromPdf(pdfBase64: string): Promise<GrammarPoi
     },
   });
 
-  const parsed = JSON.parse(response.text || '[]');
+  const parsed = JSON.parse(text || '[]');
   return parsed.map((p: any) => ({
     ...p,
     id: Math.random().toString(36).substr(2, 9),
@@ -73,8 +83,6 @@ export async function parseGrammarFromPdf(pdfBase64: string): Promise<GrammarPoi
 }
 
 export async function analyzeGameRegion(base64Image: string, grammarPoints: GrammarPoint[]) {
-  const ai = getAiClient();
-  if (!ai) throw new Error("Client initialization failed");
   const grammarContext = grammarPoints.map(p => `- ${p.name}: ${p.description} (Pattern: ${p.pattern})`).join('\n');
   
   const prompt = `
@@ -95,21 +103,10 @@ export async function analyzeGameRegion(base64Image: string, grammarPoints: Gram
     Format the response as JSON.
   `;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: [
-      {
-        parts: [
-          { text: prompt },
-          {
-            inlineData: {
-              mimeType: "image/png",
-              data: base64Image,
-            },
-          },
-        ],
-      },
-    ],
+  const text = await callGeminiThroughProxy({
+    prompt,
+    mimeType: "image/png",
+    base64Data: base64Image,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -156,13 +153,10 @@ export async function analyzeGameRegion(base64Image: string, grammarPoints: Gram
     },
   });
 
-  return JSON.parse(response.text || '{}');
+  return JSON.parse(text || '{}');
 }
 
 export async function performLensAnalysis(base64Image: string) {
-  const ai = getAiClient();
-  if (!ai) throw new Error("Client initialization failed");
-  
   const prompt = `
     Perform a "Google Lens" style analysis on this image.
     1. Detect all text blocks.
@@ -175,21 +169,10 @@ export async function performLensAnalysis(base64Image: string) {
     Respond with ONLY a JSON object containing a "blocks" array.
   `;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: [
-      {
-        parts: [
-          { text: prompt },
-          {
-            inlineData: {
-              mimeType: "image/png",
-              data: base64Image,
-            },
-          },
-        ],
-      },
-    ],
+  const text = await callGeminiThroughProxy({
+    prompt,
+    mimeType: "image/png",
+    base64Data: base64Image,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -217,12 +200,10 @@ export async function performLensAnalysis(base64Image: string) {
     },
   });
 
-  return JSON.parse(response.text || '{"blocks": []}');
+  return JSON.parse(text || '{"blocks": []}');
 }
 
-export async function analyzeText(text: string, grammarPoints: GrammarPoint[]) {
-  const ai = getAiClient();
-  if (!ai) throw new Error("Client initialization failed");
+export async function analyzeText(textToAnalyze: string, grammarPoints: GrammarPoint[]) {
   const grammarContext = grammarPoints.map(p => `- ${p.name}: ${p.description} (Pattern: ${p.pattern})`).join('\n');
   
   const prompt = `
@@ -240,9 +221,8 @@ export async function analyzeText(text: string, grammarPoints: GrammarPoint[]) {
     Format the response as JSON.
   `;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: [{ parts: [{ text: prompt + "\n\nTEXT TO ANALYZE: " + text }] }],
+  const responseText = await callGeminiThroughProxy({
+    prompt: prompt + "\n\nTEXT TO ANALYZE: " + textToAnalyze,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -277,9 +257,9 @@ export async function analyzeText(text: string, grammarPoints: GrammarPoint[]) {
     },
   });
 
-  const parsed = JSON.parse(response.text || '{}');
+  const parsed = JSON.parse(responseText || '{}');
   return {
     ...parsed,
-    extractedText: text
+    extractedText: textToAnalyze
   };
 }
