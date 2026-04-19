@@ -308,7 +308,7 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
               <Panel variant="glass" className="p-6 flex items-center gap-4">
                 <input 
                   autoFocus
-                  value={isCreatingDeck ? newDeckName : editingDeckName}
+                  value={isCreatingDeck ? newDeckName : (editingDeckName || '')}
                   onChange={e => isCreatingDeck ? setNewDeckName(e.target.value) : setEditingDeckName(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && (isCreatingDeck ? onCreateDeck() : onRenameDeck())}
                   placeholder={isCreatingDeck ? "Enter deck name..." : "Rename deck..."}

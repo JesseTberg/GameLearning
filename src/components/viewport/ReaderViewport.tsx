@@ -3,11 +3,13 @@ import { ViewportHeader } from './ViewportHeader';
 import { CaptureCanvas } from './CaptureCanvas';
 import { MainAnalysis } from './MainAnalysis';
 import { QuickActions } from './QuickActions';
+import { LensOverlay } from './LensOverlay';
 import { SectionHeader } from '../ui/SectionHeader';
 import { useScreenCapture } from '../../hooks/useScreenCapture';
 import { useSelectionBox } from '../../hooks/useSelectionBox';
 import { useOCR } from '../../hooks/useOCR';
 import { Flashcard, GrammarPoint, CapturedText, Deck } from '../../types';
+import { cn } from '../../lib/utils';
 
 interface ReaderViewportProps {
   grammarPoints: GrammarPoint[];
@@ -38,6 +40,8 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
   const [pan, setPan] = React.useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = React.useState(false);
   const [lastMousePos, setLastMousePos] = React.useState({ x: 0, y: 0 });
+  const [isLensVisible, setIsLensVisible] = React.useState(false);
+  const [isPrepVisible, setIsPrepVisible] = React.useState(true);
   
   const {
     isCapturing,
@@ -60,7 +64,10 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
   const {
     isLoading,
     currentAnalysis,
-    performOCR
+    lensResult,
+    setLensResult,
+    performOCR,
+    performLens
   } = useOCR(grammarPoints, setCapturedTexts);
 
   // Persistence effect
@@ -73,6 +80,68 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
     }
   }, [isCapturing, streamRef, videoRef]);
 
+  const handleTriggerLens = async () => {
+    if (!videoRef.current || !canvasRef.current || !containerRef.current) return;
+    
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    
+    // Choose capture area: zoomed viewport OR full video
+    let sourceRect;
+    const vidRect = video.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    
+    const scaleX = video.videoWidth / vidRect.width;
+    const scaleY = video.videoHeight / vidRect.height;
+
+    if (zoom > 1.05) {
+      // Logic from onAnalyze: map container boundaries to video source
+      const relX = containerRect.left - vidRect.left;
+      const relY = containerRect.top - vidRect.top;
+      
+      sourceRect = {
+        sx: Math.max(0, relX * scaleX),
+        sy: Math.max(0, relY * scaleY),
+        sw: Math.min(video.videoWidth, containerRect.width * scaleX),
+        sh: Math.min(video.videoHeight, containerRect.height * scaleY)
+      };
+    } else {
+      sourceRect = {
+        sx: 0,
+        sy: 0,
+        sw: video.videoWidth,
+        sh: video.videoHeight
+      };
+    }
+    
+    if (sourceRect.sw === 0 || sourceRect.sh === 0) return;
+
+    canvas.width = sourceRect.sw;
+    canvas.height = sourceRect.sh;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    ctx.drawImage(
+      video, 
+      sourceRect.sx, sourceRect.sy, sourceRect.sw, sourceRect.sh,
+      0, 0, canvas.width, canvas.height
+    );
+    const base64Image = canvas.toDataURL('image/png').split(',')[1];
+    
+    setIsLensVisible(true);
+    try {
+      await performLens(base64Image);
+    } catch (err) {
+      setIsLensVisible(false);
+    }
+  };
+
+  const handleResetZoom = () => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  };
+
   // Handle Right Click Panning
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button === 2) {
@@ -84,11 +153,27 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
     originalMouseDown(e);
   };
 
+  const clampPan = (nextX: number, nextY: number, nextZoom: number) => {
+    if (!containerRef.current) return { x: nextX, y: nextY };
+    const rect = containerRef.current.getBoundingClientRect();
+    
+    // Limits: pan cannot go above 0 (top/left) 
+    // and cannot go below container - zoomed_size (bottom/right)
+    const minX = rect.width * (1 - nextZoom);
+    const minY = rect.height * (1 - nextZoom);
+    
+    return {
+      x: Math.min(0, Math.max(nextX, minX)),
+      y: Math.min(0, Math.max(nextY, minY))
+    };
+  };
+
   const handleMouseMove = (e: React.MouseEvent) => {
     if (isPanning) {
       const dx = e.clientX - lastMousePos.x;
       const dy = e.clientY - lastMousePos.y;
-      setPan(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+      
+      setPan(prev => clampPan(prev.x + dx, prev.y + dy, zoom));
       setLastMousePos({ x: e.clientX, y: e.clientY });
       return;
     }
@@ -118,11 +203,10 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
     const mouseY = e.clientY - rect.top;
 
     // Adjust pan to zoom towards mouse position
-    // Formula: newPan = mousePos - (mousePos - oldPan) * (newZoom / oldZoom)
-    const nextPan = {
-      x: mouseX - (mouseX - pan.x) * (nextZoom / zoom),
-      y: mouseY - (mouseY - pan.y) * (nextZoom / zoom)
-    };
+    const rawPanX = mouseX - (mouseX - pan.x) * (nextZoom / zoom);
+    const rawPanY = mouseY - (mouseY - pan.y) * (nextZoom / zoom);
+
+    const nextPan = clampPan(rawPanX, rawPanY, nextZoom);
 
     setZoom(nextZoom);
     setPan(nextPan);
@@ -134,20 +218,15 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
     const canvas = canvasRef.current;
     const video = videoRef.current;
     
-    // Robust mapping using boundingClientRects
-    // This correctly handles any CSS transforms (scale, translate) applied to the video element
     const vidRect = video.getBoundingClientRect();
     const containerRect = containerRef.current.getBoundingClientRect();
     
-    // Selection coordinates in screen space
     const selScreenLeft = containerRect.left + selectionRect.left;
     const selScreenTop = containerRect.top + selectionRect.top;
     
-    // Coordinates relative to the video content's visual top-left
     const relX = selScreenLeft - vidRect.left;
     const relY = selScreenTop - vidRect.top;
     
-    // Proportional scaling to map visual pixels to video source pixels
     const scaleX = video.videoWidth / vidRect.width;
     const scaleY = video.videoHeight / vidRect.height;
 
@@ -166,7 +245,10 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
       0, 0, canvas.width, canvas.height
     );
 
-    const base64Image = canvas.toDataURL('image/jpeg').split(',')[1];
+    // Ensure minimum dimensions to avoid API errors
+    if (canvas.width < 10 || canvas.height < 10) return;
+
+    const base64Image = canvas.toDataURL('image/png').split(',')[1];
     try {
       await performOCR(base64Image);
       resetSelection();
@@ -194,6 +276,10 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
         stopCapture={stopCapture} 
         zoom={zoom}
         onZoomChange={setZoom}
+        onResetZoom={handleResetZoom}
+        onTriggerLens={handleTriggerLens}
+        isLensLoading={isLensVisible && isLoading}
+        isOCRLoading={!isLensVisible && isLoading}
       />
 
       {captureError && (
@@ -206,14 +292,26 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <div className="lg:col-span-3">
+      <div className={cn(
+        "grid gap-8 transition-all duration-500",
+        isPrepVisible ? "grid-cols-1 lg:grid-cols-4" : "grid-cols-1"
+      )}>
+        <div className={isPrepVisible ? "lg:col-span-3" : "w-full"}>
+          <div className="flex justify-end mb-2">
+            <button 
+              onClick={() => setIsPrepVisible(!isPrepVisible)}
+              className="text-[10px] font-bold text-text-dim hover:text-white uppercase tracking-widest px-3 py-1 bg-white/5 rounded border border-white/5"
+            >
+              {isPrepVisible ? "Hide Prep Area" : "Show Prep Area"}
+            </button>
+          </div>
+
           <CaptureCanvas 
             isCapturing={isCapturing}
             videoRef={videoRef}
             containerRef={containerRef}
             isSelecting={isSelecting}
-            isLoading={isLoading}
+            isLoading={isLoading && !isLensVisible}
             selectionRect={selectionRect}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
@@ -222,7 +320,22 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
             onStartCapture={startCapture}
             zoom={zoom}
             pan={pan}
-          />
+          >
+            {isLensVisible && lensResult && (
+              <LensOverlay 
+                result={lensResult} 
+                onClose={() => setIsLensVisible(false)} 
+                isLoading={isLoading}
+                onAddFlashcard={(text, translation) => {
+                   setPrepCard({
+                     front: text,
+                     back: translation,
+                     context: 'Lens mode capture'
+                   });
+                }}
+              />
+            )}
+          </CaptureCanvas>
           
           <MainAnalysis 
             currentAnalysis={currentAnalysis} 
@@ -232,15 +345,19 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
           />
         </div>
 
-        <QuickActions 
-          prepCard={prepCard}
-          setPrepCard={setPrepCard}
-          onAddFlashcard={(card) => {
-            setFlashcards(prev => [card, ...prev]);
-            setPrepCard({ front: '', reading: '', back: '', context: '' });
-          }}
-          decks={decks}
-        />
+        {isPrepVisible && (
+          <div className="lg:col-span-1">
+            <QuickActions 
+              prepCard={prepCard}
+              setPrepCard={setPrepCard}
+              onAddFlashcard={(card) => {
+                setFlashcards(prev => [card, ...prev]);
+                setPrepCard({ front: '', reading: '', back: '', context: '' });
+              }}
+              decks={decks}
+            />
+          </div>
+        )}
       </div>
 
       <canvas ref={canvasRef} className="hidden" />

@@ -1,10 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { analyzeGameRegion } from '../services/gemini';
-import { GrammarPoint, CapturedText } from '../types';
+import { analyzeGameRegion, performLensAnalysis } from '../services/gemini';
+import { GrammarPoint, CapturedText, LensResult } from '../types';
 
 export function useOCR(grammarPoints: GrammarPoint[], setCapturedTexts: React.Dispatch<React.SetStateAction<CapturedText[]>>) {
   const [isLoading, setIsLoading] = useState(false);
   const [currentAnalysis, setCurrentAnalysis] = useState<any>(null);
+  const [lensResult, setLensResult] = useState<LensResult | null>(null);
 
   const performOCR = useCallback(async (base64Image: string) => {
     setIsLoading(true);
@@ -35,10 +36,30 @@ export function useOCR(grammarPoints: GrammarPoint[], setCapturedTexts: React.Di
     }
   }, [grammarPoints, setCapturedTexts]);
 
+  const performLens = useCallback(async (base64Image: string) => {
+    setIsLoading(true);
+    try {
+      const result = await performLensAnalysis(base64Image);
+      setLensResult({
+        screenshot: base64Image,
+        blocks: result.blocks
+      });
+      return result;
+    } catch (err: any) {
+      console.error("Lens analysis failed:", err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   return {
     isLoading,
     currentAnalysis,
+    lensResult,
+    setLensResult,
     performOCR,
+    performLens,
     setCurrentAnalysis
   };
 }

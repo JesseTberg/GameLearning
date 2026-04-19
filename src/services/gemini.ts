@@ -153,3 +153,63 @@ export async function analyzeGameRegion(base64Image: string, grammarPoints: Gram
 
   return JSON.parse(response.text || '{}');
 }
+
+export async function performLensAnalysis(base64Image: string) {
+  const ai = getAiClient();
+  
+  const prompt = `
+    Perform a "Google Lens" style analysis on this image.
+    1. Detect all text blocks.
+    2. For each block, provide:
+       - originalText: The text extracted from the block.
+       - translatedText: A natural translation of that text.
+       - boundingBox: [ymin, xmin, ymax, xmax] coordinates in normalized 0-1000 scale.
+    
+    Ensure the bounding boxes accurately enclose the text.
+    Respond with ONLY a JSON object containing a "blocks" array.
+  `;
+
+  const response = await ai.models.generateContent({
+    model: "gemini-3-flash-preview",
+    contents: [
+      {
+        parts: [
+          { text: prompt },
+          {
+            inlineData: {
+              mimeType: "image/png",
+              data: base64Image,
+            },
+          },
+        ],
+      },
+    ],
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          blocks: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                originalText: { type: Type.STRING },
+                translatedText: { type: Type.STRING },
+                boundingBox: {
+                  type: Type.ARRAY,
+                  items: { type: Type.NUMBER },
+                  minItems: 4,
+                  maxItems: 4,
+                },
+              },
+              required: ["originalText", "translatedText", "boundingBox"]
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return JSON.parse(response.text || '{"blocks": []}');
+}

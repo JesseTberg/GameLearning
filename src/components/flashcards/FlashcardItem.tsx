@@ -12,9 +12,9 @@ interface FlashcardItemProps {
 
 export const FlashcardItem: React.FC<FlashcardItemProps> = ({ card, onUpdate, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [front, setFront] = useState(card.front);
+  const [front, setFront] = useState(card.front || '');
   const [reading, setReading] = useState(card.reading || '');
-  const [back, setBack] = useState(card.back);
+  const [back, setBack] = useState(card.back || '');
   const [context, setContext] = useState(card.context || '');
 
   const onSave = () => {

@@ -67,7 +67,7 @@ export const QuickActions: React.FC<FlashcardPrepProps> = ({
           <div className="space-y-2">
             <label className="text-[10px] text-gray-500 uppercase font-bold tracking-tighter">Word / Text</label>
             <input 
-              value={prepCard.front}
+              value={prepCard.front || ''}
               onChange={(e) => setPrepCard(p => ({ ...p, front: e.target.value }))}
               placeholder="Captured Word"
               className="w-full bg-bg/50 border border-border/50 rounded p-2 text-sm text-white focus:border-blue-500 outline-none transition-all font-medium"
@@ -77,7 +77,7 @@ export const QuickActions: React.FC<FlashcardPrepProps> = ({
           <div className="space-y-2">
             <label className="text-[10px] text-gray-500 uppercase font-bold tracking-tighter">Reading (Optional)</label>
             <input 
-              value={prepCard.reading}
+              value={prepCard.reading || ''}
               onChange={(e) => setPrepCard(p => ({ ...p, reading: e.target.value }))}
               placeholder="e.g. かんじ"
               className="w-full bg-bg/50 border border-border/50 rounded p-2 text-sm text-white focus:border-blue-500 outline-none transition-all font-medium"
@@ -87,7 +87,7 @@ export const QuickActions: React.FC<FlashcardPrepProps> = ({
           <div className="space-y-2">
             <label className="text-[10px] text-gray-500 uppercase font-bold tracking-tighter">Meaning / Definition</label>
             <textarea 
-              value={prepCard.back}
+              value={prepCard.back || ''}
               onChange={(e) => setPrepCard(p => ({ ...p, back: e.target.value }))}
               placeholder="Translation results"
               rows={3}
@@ -123,7 +123,7 @@ export const QuickActions: React.FC<FlashcardPrepProps> = ({
               )}
             </label>
             <textarea 
-              value={prepCard.context}
+              value={prepCard.context || ''}
               onChange={(e) => setPrepCard(p => ({ ...p, context: e.target.value }))}
               placeholder="Source text context"
               rows={2}

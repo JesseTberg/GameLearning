@@ -13,10 +13,10 @@ interface MainAnalysisProps {
 
 export const MainAnalysis: React.FC<MainAnalysisProps> = ({ 
   currentAnalysis, 
+  showTranslation,
+  onToggleTranslation,
   onWordClick 
 }) => {
-  const [showLocalTranslation, setShowLocalTranslation] = React.useState(false);
-
   if (!currentAnalysis) {
     return (
       <div className="h-48 border border-dashed border-border rounded-xl flex items-center justify-center text-text-dim/40 italic font-mono uppercase tracking-[0.3em]">
@@ -39,13 +39,13 @@ export const MainAnalysis: React.FC<MainAnalysisProps> = ({
         </div>
         
         <button 
-          onClick={() => setShowLocalTranslation(!showLocalTranslation)}
+          onClick={onToggleTranslation}
           className={cn(
             "text-[10px] uppercase tracking-widest font-bold px-3 py-1 rounded transition-colors flex items-center gap-2 border border-blue-500/20",
-            showLocalTranslation ? "bg-blue-600 text-white" : "bg-blue-600/10 text-blue-400 hover:bg-blue-600/20"
+            showTranslation ? "bg-blue-600 text-white" : "bg-blue-600/10 text-blue-400 hover:bg-blue-600/20"
           )}
         >
-          {showLocalTranslation ? "Hide Translation" : "Show Translation"}
+          {showTranslation ? "Hide Translation" : "Show Translation"}
         </button>
       </header>
 
@@ -66,7 +66,7 @@ export const MainAnalysis: React.FC<MainAnalysisProps> = ({
           </div>
         </div>
         
-        {showLocalTranslation && (
+        {showTranslation && (
           <motion.div 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}

@@ -41,3 +41,14 @@ export interface Flashcard {
   context?: string;
   createdAt: number;
 }
+
+export interface LensBlock {
+  originalText: string;
+  translatedText: string;
+  boundingBox: [number, number, number, number]; // [ymin, xmin, ymax, xmax] 0-1000
+}
+
+export interface LensResult {
+  screenshot: string; // base64
+  blocks: LensBlock[];
+}

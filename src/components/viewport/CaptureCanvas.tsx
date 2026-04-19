@@ -16,6 +16,7 @@ interface CaptureCanvasProps {
   onStartCapture: () => void;
   zoom: number;
   pan: { x: number; y: number };
+  children?: React.ReactNode;
 }
 
 export const CaptureCanvas: React.FC<CaptureCanvasProps> = ({
@@ -31,8 +32,28 @@ export const CaptureCanvas: React.FC<CaptureCanvasProps> = ({
   onWheel,
   onStartCapture,
   zoom,
-  pan
+  pan,
+  children
 }) => {
+  // Prevent page scroll when hovering/wheeling on the canvas
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleWheelPrevent = (e: WheelEvent) => {
+      // If we are capturing, we want the zoom logic to work but NOT the page to scroll
+      if (isCapturing) {
+        e.preventDefault();
+      }
+    };
+
+    // We must use a non-passive listener to allow preventDefault
+    container.addEventListener('wheel', handleWheelPrevent, { passive: false });
+    return () => {
+      container.removeEventListener('wheel', handleWheelPrevent);
+    };
+  }, [isCapturing, containerRef]);
+
   return (
     <div 
       ref={containerRef}
@@ -47,6 +68,8 @@ export const CaptureCanvas: React.FC<CaptureCanvasProps> = ({
     >
       <video 
         ref={videoRef} 
+        disablePictureInPicture
+        controlsList="nodownload noremoteplayback"
         style={{ 
           transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
           transformOrigin: '0 0'
@@ -59,6 +82,8 @@ export const CaptureCanvas: React.FC<CaptureCanvasProps> = ({
         muted 
         playsInline 
       />
+
+      {children}
 
       {!isCapturing && (
         <div className="text-panel flex flex-col items-center gap-4 opacity-50 text-center px-4">

@@ -35,7 +35,7 @@ export const GrammarForm: React.FC<GrammarFormProps> = ({
         <div>
           <label className="text-[10px] text-text-dim uppercase mb-1 block">Rule Name</label>
           <input 
-            value={name}
+            value={name || ''}
             onChange={e => onNameChange(e.target.value)}
             placeholder="e.g. て-form"
             className="w-full bg-bg border border-border rounded px-3 py-2 text-sm focus:border-accent outline-none text-white"
@@ -44,7 +44,7 @@ export const GrammarForm: React.FC<GrammarFormProps> = ({
         <div>
           <label className="text-[10px] text-text-dim uppercase mb-1 block">Description</label>
           <textarea 
-            value={description}
+            value={description || ''}
             onChange={e => onDescriptionChange(e.target.value)}
             placeholder="Explain the grammar logic..."
             className="w-full bg-bg border border-border rounded px-3 py-2 text-sm h-24 focus:border-accent outline-none text-white"
@@ -53,7 +53,7 @@ export const GrammarForm: React.FC<GrammarFormProps> = ({
         <div>
           <label className="text-[10px] text-text-dim uppercase mb-1 block">Pattern Hint (Optional)</label>
           <input 
-            value={pattern}
+            value={pattern || ''}
             onChange={e => onPatternChange(e.target.value)}
             placeholder="verb[te]"
             className="w-full bg-bg border border-border rounded px-3 py-2 text-sm focus:border-accent outline-none text-white"
