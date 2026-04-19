@@ -4,21 +4,23 @@ import { GrammarPoint } from "../types";
 let aiClient: any = null;
 
 function getAiClient() {
-  if (!aiClient) {
-    const localKey = typeof window !== 'undefined' ? localStorage.getItem('GEMINI_API_KEY') : null;
-    const envKey = process.env.GEMINI_API_KEY;
-    const apiKey = localKey || envKey;
+  if (typeof window === 'undefined') return null;
 
-    if (!apiKey || apiKey === 'undefined' || apiKey === 'MY_GEMINI_API_KEY') {
-      throw new Error('API Key is missing. Please set it in the Settings menu or as an environment variable.');
-    }
-    aiClient = new GoogleGenAI({ apiKey });
+  const localKey = localStorage.getItem('GEMINI_API_KEY');
+  
+  if (!localKey || localKey === 'undefined' || localKey === 'MY_GEMINI_API_KEY') {
+    throw new Error('API Key is missing. Please set your own Gemini API Key in the Settings menu (sidebar bottom).');
+  }
+
+  if (!aiClient) {
+    aiClient = new GoogleGenAI({ apiKey: localKey });
   }
   return aiClient;
 }
 
 export async function parseGrammarFromPdf(pdfBase64: string): Promise<GrammarPoint[]> {
   const ai = getAiClient();
+  if (!ai) throw new Error("Client initialization failed");
   
   const prompt = `
     Analyze this document and extract key grammar points for someone learning the language.
@@ -72,6 +74,7 @@ export async function parseGrammarFromPdf(pdfBase64: string): Promise<GrammarPoi
 
 export async function analyzeGameRegion(base64Image: string, grammarPoints: GrammarPoint[]) {
   const ai = getAiClient();
+  if (!ai) throw new Error("Client initialization failed");
   const grammarContext = grammarPoints.map(p => `- ${p.name}: ${p.description} (Pattern: ${p.pattern})`).join('\n');
   
   const prompt = `
@@ -158,6 +161,7 @@ export async function analyzeGameRegion(base64Image: string, grammarPoints: Gram
 
 export async function performLensAnalysis(base64Image: string) {
   const ai = getAiClient();
+  if (!ai) throw new Error("Client initialization failed");
   
   const prompt = `
     Perform a "Google Lens" style analysis on this image.
@@ -218,6 +222,7 @@ export async function performLensAnalysis(base64Image: string) {
 
 export async function analyzeText(text: string, grammarPoints: GrammarPoint[]) {
   const ai = getAiClient();
+  if (!ai) throw new Error("Client initialization failed");
   const grammarContext = grammarPoints.map(p => `- ${p.name}: ${p.description} (Pattern: ${p.pattern})`).join('\n');
   
   const prompt = `

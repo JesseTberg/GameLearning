@@ -50,8 +50,8 @@ export default function App() {
   // Capture state moved here for persistence
   const capture = useScreenCapture();
 
-  // Check for API key
-  const hasKey = typeof window !== 'undefined' && (!!localStorage.getItem('GEMINI_API_KEY') || !!process.env.GEMINI_API_KEY);
+  // Check for API key in local storage only
+  const hasKey = typeof window !== 'undefined' && !!localStorage.getItem('GEMINI_API_KEY');
 
   return (
     <div className="flex min-h-screen bg-bg text-text-main selection:bg-blue-600/40 selection:text-white font-sans">
