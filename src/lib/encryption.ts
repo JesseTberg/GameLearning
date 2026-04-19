@@ -1,17 +1,29 @@
 /**
  * Secure Encryption Utility for API Key Storage
- * Uses Web Crypto API for client-side encryption of sensitive data in sessionStorage.
+ * * Strategy: Volatile Session Entropy
+ * 1. A random 256-bit entropy buffer is generated in RAM on app load.
+ * 2. This buffer is used as the 'seed' for PBKDF2 key derivation.
+ * 3. AES-GCM 256-bit encryption secures the API key in sessionStorage.
+ * * Result: If the tab is closed or a hard refresh occurs, the entropy is wiped,
+ * making the sessionStorage data mathematically undecipherable.
  */
 
-// A simple internal salt for the application. 
-// For production, this should ideally be combined with a user-specific value if available.
-const APP_SECRET_BASE = "game-learning-secure-v1-2026";
+let sessionEntropy: Uint8Array | null = null;
+
+
+function getSessionEntropy(): Uint8Array {
+  if (!sessionEntropy) {
+    sessionEntropy = crypto.getRandomValues(new Uint8Array(32));
+  }
+  return sessionEntropy;
+}
 
 async function getEncryptionKey(): Promise<CryptoKey> {
+  const entropy = getSessionEntropy();
   const encoder = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
     "raw",
-    encoder.encode(APP_SECRET_BASE),
+    entropy.buffer as ArrayBuffer, 
     { name: "PBKDF2" },
     false,
     ["deriveKey"]
@@ -20,7 +32,7 @@ async function getEncryptionKey(): Promise<CryptoKey> {
   return crypto.subtle.deriveKey(
     {
       name: "PBKDF2",
-      salt: encoder.encode("session-salt-secure"),
+      salt: encoder.encode("game-learning-v1-salt").buffer as ArrayBuffer, 
       iterations: 100000,
       hash: "SHA-256",
     },
@@ -44,7 +56,7 @@ function base64ToBytes(base64: string): Uint8Array {
 export async function encryptData(text: string): Promise<string> {
   const key = await getEncryptionKey();
   const encoder = new TextEncoder();
-  const data = encoder.encode(text.trim()); // Trim before encryption
+  const data = encoder.encode(text.trim());
   const iv = crypto.getRandomValues(new Uint8Array(12));
 
   const encrypted = await crypto.subtle.encrypt(
@@ -53,7 +65,7 @@ export async function encryptData(text: string): Promise<string> {
     data
   );
 
-  // Combine IV and Encrypted data for storage
+  // Pack IV + Encrypted Data together
   const combined = new Uint8Array(iv.length + encrypted.byteLength);
   combined.set(iv, 0);
   combined.set(new Uint8Array(encrypted), iv.length);
@@ -77,7 +89,7 @@ export async function decryptData(base64: string): Promise<string | null> {
 
     return new TextDecoder().decode(decrypted);
   } catch (e) {
-    console.error("Decryption failed:", e);
+    // Decryption will fail if the session was reset or data was tampered with
     return null;
   }
 }
@@ -86,9 +98,7 @@ export async function decryptData(base64: string): Promise<string | null> {
  * Convenience functions for the BYOK flow
  */
 const STORAGE_KEY_PREFIX = "ENCRYPTED_KEY_";
-
 export const API_KEY_CHANGE_EVENT = "api-key-changed";
-
 export type AiProvider = 'gemini' | 'openai' | 'anthropic';
 
 export async function saveApiKey(provider: AiProvider, key: string): Promise<void> {
@@ -100,7 +110,14 @@ export async function saveApiKey(provider: AiProvider, key: string): Promise<voi
 export async function getStoredApiKey(provider: AiProvider = 'gemini'): Promise<string | null> {
   const stored = sessionStorage.getItem(`${STORAGE_KEY_PREFIX}${provider.toUpperCase()}`);
   if (!stored) return null;
-  return decryptData(stored);
+  
+  const decrypted = await decryptData(stored);
+  if (!decrypted) {
+    // If decryption fails, the session is invalid; clear the stale data
+    sessionStorage.removeItem(`${STORAGE_KEY_PREFIX}${provider.toUpperCase()}`);
+    return null;
+  }
+  return decrypted;
 }
 
 export function hasApiKey(provider: AiProvider = 'gemini'): boolean {

@@ -29,17 +29,28 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose }) => 
   }, [isOpen, provider]);
 
   const handleSave = async () => {
-    await saveApiKey(provider, apiKey);
-    setIsSaved(true);
-    setTimeout(() => {
-      setIsSaved(false);
-      onClose();
-    }, 800);
+    if (!apiKey) return;
+    
+    setIsLoading(true); 
+    try {
+      await saveApiKey(provider, apiKey);
+      setIsSaved(true);
+      
+      setTimeout(() => {
+        setIsSaved(false);
+        onClose();
+      }, 800);
+    } catch (err) {
+      console.error("Encryption failed", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleClear = () => {
     clearApiKey(provider);
     setApiKey('');
+  
   };
 
   return (
