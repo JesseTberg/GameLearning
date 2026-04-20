@@ -29,33 +29,35 @@ async function callGeminiThroughProxy(params: {
     body: JSON.stringify({
       ...params,
       provider,
-      model: params.model || (window as any)._AI_MODEL || "gemini-3-flash-preview"
+      model: params.model || (window as any)._AI_MODEL || "gemini-2.0-flash"
     }),
   });
 
+  const responseText = await response.text();
+
   if (!response.ok) {
-    const text = await response.text();
     let errorMessage = `Request failed with status ${response.status}`;
-    try {
-      const errorData = JSON.parse(text);
-      errorMessage = errorData.error || errorMessage;
-    } catch (e) {
-      // Not JSON, use the raw text if it's short, otherwise use status
-      if (text.length < 200) errorMessage = text;
+    if (responseText) {
+      try {
+        const errorData = JSON.parse(responseText);
+        errorMessage = errorData.error || errorMessage;
+      } catch (e) {
+        // Not JSON, use the raw response if it's reasonably sized
+        if (responseText.length < 500) errorMessage = responseText;
+      }
     }
     throw new Error(errorMessage);
   }
 
-  const text = await response.text();
-  if (text.trim().startsWith("<!DOCTYPE html>")) {
-    throw new Error("Backend not found or returned an HTML error page. If you are on Vercel, ensuring your API routes are correctly deployed.");
+  if (responseText.trim().startsWith("<!DOCTYPE html>")) {
+    throw new Error("Backend not found or returned an HTML error page. This usually means the API route is missing or misconfigured on your hosting provider.");
   }
 
   try {
-    const data = JSON.parse(text);
+    const data = JSON.parse(responseText);
     return data.text;
   } catch (e) {
-    console.error("Failed to parse Gemini response as JSON. Raw body:", text);
+    console.error("Failed to parse Gemini response as JSON. Raw body:", responseText);
     throw new Error("The AI Assistant returned a malformed response. Please try refreshing and entering your key again.");
   }
 }

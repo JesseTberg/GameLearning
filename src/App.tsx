@@ -31,7 +31,7 @@ export default function App() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [hasKey, setHasKey] = useState(hasApiKey());
-  const [selectedModel, setSelectedModel] = useState('gemini-3-flash-preview');
+  const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash');
 
   // Set global variables for the service to pick up
   React.useEffect(() => {
@@ -48,7 +48,8 @@ export default function App() {
 
   const getQuotaInfo = () => {
     if (selectedModel.includes('pro')) return "PRO QUOTA: ~2 RPM (FREE)";
-    return "FLASH QUOTA: ~15 RPM (FREE)";
+    if (selectedModel.includes('flash')) return "FLASH QUOTA: ~15 RPM (FREE)";
+    return "QUOTA VARIES";
   };
 
   // Prep Area state lifted for access from History

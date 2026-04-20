@@ -1,6 +1,5 @@
 import express from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import helmet from "helmet";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
@@ -33,6 +32,14 @@ app.use(
 );
 
 app.use(express.json({ limit: '10mb' }));
+
+app.get("/api/health", (req, res) => {
+  res.json({ 
+    status: "ok", 
+    environment: process.env.VERCEL ? "vercel" : "server",
+    nodeVersion: process.version
+  });
+});
 
 app.post("/api/ai-proxy", async (req, res) => {
   try {
@@ -89,9 +96,23 @@ app.post("/api/ai-proxy", async (req, res) => {
     }
     
     if (errorMsg.includes("429") || errorMsg.includes("Too Many Requests")) {
-      return res.status(429).json({ 
-        error: "Your API key has reached its rate limit. Please wait a moment before trying again." 
-      });
+      let retryAfter = "";
+      try {
+        // Try to parse the error message which is often a JSON string from Google
+        const parsedError = JSON.parse(errorMsg);
+        const retryInfo = parsedError.error?.details?.find((d: any) => d["@type"]?.includes("RetryInfo"));
+        if (retryInfo?.retryDelay) {
+          retryAfter = retryInfo.retryDelay.replace('s', ''); // Clean '17s' to '17'
+        }
+      } catch (e) {
+        // Not JSON, ignore and use default
+      }
+
+      const msg = retryAfter 
+        ? `Your API key has reached its rate limit. Please wait about ${retryAfter} seconds before trying again.`
+        : "Your API key has reached its rate limit. Please wait a moment before trying again.";
+
+      return res.status(429).json({ error: msg, retryAfter });
     }
 
     res.status(500).json({ error: `AI Assistant Error: ${errorMsg || 'Connection reset by peer. Please retry.'}` });
@@ -100,6 +121,8 @@ app.post("/api/ai-proxy", async (req, res) => {
 
 async function setupVite() {
   if (process.env.NODE_ENV !== "production") {
+    // Only import vite when needed to avoid production dependency issues
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",

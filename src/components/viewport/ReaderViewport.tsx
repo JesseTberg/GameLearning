@@ -69,7 +69,9 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
     performOCR,
     performLens,
     performTextAnalysis,
-    setCurrentAnalysis
+    setCurrentAnalysis,
+    error: analysisError,
+    setError: setAnalysisError
   } = useOCR(grammarPoints, setCapturedTexts);
 
   const handleLensBlockClick = (text: string) => {
@@ -298,6 +300,24 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
             <p className="font-bold uppercase tracking-widest text-[10px] mb-1 text-red-300">Connection Error</p>
             {captureError}
           </div>
+        </div>
+      )}
+
+      {analysisError && (
+        <div className="bg-amber-900/20 border border-amber-900/40 text-amber-400 p-4 rounded-lg text-sm mb-6 flex items-start justify-between gap-4">
+          <div className="flex gap-4">
+            <div className="mt-1">⚠️</div>
+            <div>
+              <p className="font-bold uppercase tracking-widest text-[10px] mb-1 text-amber-300">Analysis Error</p>
+              {analysisError}
+            </div>
+          </div>
+          <button 
+            onClick={() => setAnalysisError(null)}
+            className="text-amber-400/60 hover:text-amber-400 transition-colors self-start"
+          >
+            Close
+          </button>
         </div>
       )}
 

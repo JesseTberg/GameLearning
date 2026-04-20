@@ -4,11 +4,13 @@ import { GrammarPoint, CapturedText, LensResult } from '../types';
 
 export function useOCR(grammarPoints: GrammarPoint[], setCapturedTexts: React.Dispatch<React.SetStateAction<CapturedText[]>>) {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [currentAnalysis, setCurrentAnalysis] = useState<any>(null);
   const [lensResult, setLensResult] = useState<LensResult | null>(null);
 
   const performOCR = useCallback(async (base64Image: string) => {
     setIsLoading(true);
+    setError(null);
     try {
       const result = await analyzeGameRegion(base64Image, grammarPoints);
       setCurrentAnalysis(result);
@@ -29,7 +31,9 @@ export function useOCR(grammarPoints: GrammarPoint[], setCapturedTexts: React.Di
       setCapturedTexts(prev => [newCapture, ...prev]);
       return result;
     } catch (err: any) {
-      console.error("Analysis failed:", err);
+      const msg = err.message || "Analysis failed";
+      console.error("Analysis failed:", msg);
+      setError(msg);
       throw err;
     } finally {
       setIsLoading(false);
@@ -38,6 +42,7 @@ export function useOCR(grammarPoints: GrammarPoint[], setCapturedTexts: React.Di
 
   const performLens = useCallback(async (base64Image: string) => {
     setIsLoading(true);
+    setError(null);
     try {
       const result = await performLensAnalysis(base64Image);
       setLensResult({
@@ -46,7 +51,9 @@ export function useOCR(grammarPoints: GrammarPoint[], setCapturedTexts: React.Di
       });
       return result;
     } catch (err: any) {
-      console.error("Lens analysis failed:", err);
+      const msg = err.message || "Lens analysis failed";
+      console.error("Lens analysis failed:", msg);
+      setError(msg);
       throw err;
     } finally {
       setIsLoading(false);
@@ -55,12 +62,15 @@ export function useOCR(grammarPoints: GrammarPoint[], setCapturedTexts: React.Di
 
   const performTextAnalysis = useCallback(async (text: string) => {
     setIsLoading(true);
+    setError(null);
     try {
       const result = await analyzeText(text, grammarPoints);
       setCurrentAnalysis(result);
       return result;
     } catch (err: any) {
-      console.error("Text analysis failed:", err);
+      const msg = err.message || "Text analysis failed";
+      console.error("Text analysis failed:", msg);
+      setError(msg);
       throw err;
     } finally {
       setIsLoading(false);
@@ -69,6 +79,8 @@ export function useOCR(grammarPoints: GrammarPoint[], setCapturedTexts: React.Di
 
   return {
     isLoading,
+    error,
+    setError,
     currentAnalysis,
     lensResult,
     setLensResult,
