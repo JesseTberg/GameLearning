@@ -29,7 +29,7 @@ async function callGeminiThroughProxy(params: {
     body: JSON.stringify({
       ...params,
       provider,
-      model: params.model || (window as any)._AI_MODEL || "gemini-2.0-flash"
+      model: params.model || (window as any)._AI_MODEL || "gemini-3-flash-preview"
     }),
   });
 

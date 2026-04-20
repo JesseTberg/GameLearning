@@ -69,7 +69,7 @@ app.post("/api/ai-proxy", async (req, res) => {
       }
 
       const result = await ai.models.generateContent({
-        model: model || "gemini-2.0-flash",
+        model: model || "gemini-3-flash-preview",
         contents: [{ role: 'user', parts }],
         config,
       });

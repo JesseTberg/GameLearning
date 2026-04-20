@@ -102,13 +102,14 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose }) => 
                       Google Gemini
                     </button>
                     <button 
-                      onClick={() => setProvider('openai')}
+                      disabled
                       className={cn(
                         "px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all border",
-                        provider === 'openai' ? "bg-green-600/20 border-green-500 text-green-400" : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"
+                        "bg-white/2 border-white/5 text-gray-600 cursor-not-allowed flex flex-col items-center gap-0.5"
                       )}
                     >
-                      OpenAI (Proxy)
+                      OpenAI
+                      <span className="text-[7px] text-amber-900/60 font-black tracking-tighter bg-amber-500/10 px-1 rounded">Under Development</span>
                     </button>
                   </div>
 

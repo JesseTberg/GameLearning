@@ -32,7 +32,7 @@ export default async function handler(req: any, res: any) {
       }
 
       const result = await ai.models.generateContent({
-        model: model || "gemini-2.0-flash",
+        model: model || "gemini-3-flash-preview",
         contents: [{ role: 'user', parts }],
         config,
       });
