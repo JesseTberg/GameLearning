@@ -59,6 +59,10 @@ app.post("/api/ai-proxy", async (req, res) => {
       const parts: any[] = [{ text: prompt }];
 
       if (base64Data && mimeType) {
+        // Enforce approximate payload limits to catch issues before sending to AI
+        if (base64Data.length > 4 * 1024 * 1024) {
+          return res.status(413).json({ error: "Selection too large. Please try a smaller area." });
+        }
         parts.push({
           inlineData: { mimeType, data: base64Data },
         });

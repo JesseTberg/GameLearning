@@ -135,7 +135,8 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
       sourceRect.sx, sourceRect.sy, sourceRect.sw, sourceRect.sh,
       0, 0, canvas.width, canvas.height
     );
-    const base64Image = canvas.toDataURL('image/png').split(',')[1];
+    // Switched to jpeg at 0.8 quality for Vercel compatibility
+    const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
     
     setIsLensVisible(true);
     try {
@@ -257,7 +258,8 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
     // Ensure minimum dimensions to avoid API errors
     if (canvas.width < 10 || canvas.height < 10) return;
 
-    const base64Image = canvas.toDataURL('image/png').split(',')[1];
+    // Switched to jpeg at 0.8 quality to keep payload small for Vercel (4.5MB limit)
+    const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
     try {
       await performOCR(base64Image);
       resetSelection();
