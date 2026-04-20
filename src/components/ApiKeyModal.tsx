@@ -109,7 +109,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose }) => 
                       )}
                     >
                       OpenAI
-                      <span className="text-[7px] text-amber-900/60 font-black tracking-tighter bg-amber-500/10 px-1 rounded">Under Development</span>
+                      <span className="text-[7px] text-white-400 font-black tracking-tighter bg-black px-1 rounded">Under Development</span>
                     </button>
                   </div>
 
