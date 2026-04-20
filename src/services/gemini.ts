@@ -1,4 +1,4 @@
-import { Type } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { GrammarPoint } from "../types";
 import { getStoredApiKey } from "../lib/encryption";
 
@@ -34,12 +34,45 @@ async function callGeminiThroughProxy(params: {
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || `Request failed with status ${response.status}`);
+    const text = await response.text();
+    let errorMessage = `Request failed with status ${response.status}`;
+    try {
+      const errorData = JSON.parse(text);
+      errorMessage = errorData.error || errorMessage;
+    } catch (e) {
+      // Not JSON, use the raw text if it's short, otherwise use status
+      if (text.length < 200) errorMessage = text;
+    }
+    throw new Error(errorMessage);
   }
 
-  const data = await response.json();
-  return data.text;
+  const text = await response.text();
+  if (text.trim().startsWith("<!DOCTYPE html>")) {
+    throw new Error("Backend not found or returned an HTML error page. If you are on Vercel, ensuring your API routes are correctly deployed.");
+  }
+
+  try {
+    const data = JSON.parse(text);
+    return data.text;
+  } catch (e) {
+    console.error("Failed to parse Gemini response as JSON. Raw body:", text);
+    throw new Error("The AI Assistant returned a malformed response. Please try refreshing and entering your key again.");
+  }
+}
+
+function sanitizeJson(text: string): string {
+  let clean = text.trim();
+  if (clean.startsWith("```")) {
+    const parts = clean.split("```");
+    // Usually it's ```json ... ``` or just ``` ... ```
+    // We take the middle part
+    clean = parts[1];
+    if (clean.startsWith("json")) {
+      clean = clean.substring(4);
+    }
+    clean = clean.split("```")[0].trim();
+  }
+  return clean;
 }
 
 export async function parseGrammarFromPdf(pdfBase64: string): Promise<GrammarPoint[]> {
@@ -74,7 +107,7 @@ export async function parseGrammarFromPdf(pdfBase64: string): Promise<GrammarPoi
     },
   });
 
-  const parsed = JSON.parse(text || '[]');
+  const parsed = JSON.parse(sanitizeJson(text || '[]'));
   return parsed.map((p: any) => ({
     ...p,
     id: Math.random().toString(36).substr(2, 9),
@@ -90,11 +123,15 @@ export async function analyzeGameRegion(base64Image: string, grammarPoints: Gram
     
     1. EXTRACT TEXT: Perform OCR on the image. Extract every word accurately.
     2. TRANSLATE: Provide a natural translation of the full text.
-    3. TOKENS: Break down the extracted text into individual words or small meaningful segments. For each segment, provide:
-       - word: the original text
-       - reading: the reading (like Furigana/Pinyin) if applicable
-       - translation: a single-word translation
-       - isFunctional: boolean, true if this is a particle, marker, or functional word (like 'no', 'wa', 'ga', 'the', 'of', etc.)
+    3. TOKENS: Break down the extracted text into individual words or segments. 
+       CRITICAL RECONSTRUCTION RULE: Every single character, space, and punctuation mark from the original text MUST be included in the tokens list. 
+       The list of 'word' fields, when joined, must be IDENTICAL to the source text. 
+       Do not skip particles like 'は', 'の', or punctuation like '「', '」', '？'.
+       For each segment, provide:
+       - word: the original text segment (including whitespace/punctuation as their own tokens)
+       - reading: the reading (like Furigana/Pinyin) if applicable (leave null for punctuation/whitespace)
+       - translation: a single-word translation (leave null for punctuation/whitespace)
+       - isFunctional: boolean, true for markers, particles, or structural segments.
     4. GRAMMAR AUDIT: Check if any of these specific grammar points appear in the text:
     ${grammarContext}
     
@@ -153,7 +190,7 @@ export async function analyzeGameRegion(base64Image: string, grammarPoints: Gram
     },
   });
 
-  return JSON.parse(text || '{}');
+  return JSON.parse(sanitizeJson(text || '{}'));
 }
 
 export async function performLensAnalysis(base64Image: string) {
@@ -200,7 +237,7 @@ export async function performLensAnalysis(base64Image: string) {
     },
   });
 
-  return JSON.parse(text || '{"blocks": []}');
+  return JSON.parse(sanitizeJson(text || '{"blocks": []}'));
 }
 
 export async function analyzeText(textToAnalyze: string, grammarPoints: GrammarPoint[]) {
@@ -210,11 +247,15 @@ export async function analyzeText(textToAnalyze: string, grammarPoints: GrammarP
     Analyze this text for language learning.
     
     1. TRANSLATE: Provide a natural translation of the full text.
-    2. TOKENS: Break down the text into individual words or small meaningful segments. For each segment, provide:
-       - word: the original text
-       - reading: the reading (like Furigana/Pinyin) if applicable
+    2. TOKENS: Break down the text into individual words or segments.
+       CRITICAL RECONSTRUCTION RULE: Every single character, space, and punctuation mark from the original text MUST be included in the tokens list. 
+       The list of 'word' fields, when joined, must be IDENTICAL to the source text. 
+       Do not skip anything.
+       For each segment, provide:
+       - word: the original text segment (including whitespace/punctuation as their own tokens)
+       - reading: the reading if applicable
        - translation: a single-word translation
-       - isFunctional: boolean, true if this is a particle, marker, or functional word (like 'no', 'wa', 'ga', 'the', 'of', etc.)
+       - isFunctional: boolean, true for particles or structural segments.
     3. GRAMMAR AUDIT: Check if any of these specific grammar points appear in the text:
     ${grammarContext}
 
@@ -257,7 +298,7 @@ export async function analyzeText(textToAnalyze: string, grammarPoints: GrammarP
     },
   });
 
-  const parsed = JSON.parse(responseText || '{}');
+  const parsed = JSON.parse(sanitizeJson(responseText || '{}'));
   return {
     ...parsed,
     extractedText: textToAnalyze

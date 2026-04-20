@@ -106,6 +106,7 @@ export default function App() {
                 onChange={(e) => setSelectedModel(e.target.value)}
                 className="bg-white/5 border border-white/10 rounded px-2 py-0.5 text-[9px] text-blue-300 outline-none hover:bg-white/10 transition-colors cursor-pointer"
               >
+                <option value="gemini-2.0-flash">Gemini 2.0 Flash (Latest)</option>
                 <option value="gemini-3-flash-preview">Gemini 3 Flash (Fast)</option>
                 <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (Strong)</option>
                 <option value="gemini-3.1-flash-lite-preview">Gemini 3.1 Flash Lite (Lite)</option>
