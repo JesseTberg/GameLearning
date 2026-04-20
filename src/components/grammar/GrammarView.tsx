@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AnimatePresence } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { SectionHeader } from '../ui/SectionHeader';
 import { GrammarItem } from './GrammarItem';
 import { GrammarForm } from './GrammarForm';
@@ -61,7 +61,12 @@ export const GrammarView: React.FC<GrammarViewProps> = ({ grammarPoints, setGram
   };
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="space-y-6"
+    >
       <SectionHeader 
         title="Grammar Guide" 
         subtitle="Rules to help translate and understand context" 
@@ -80,10 +85,10 @@ export const GrammarView: React.FC<GrammarViewProps> = ({ grammarPoints, setGram
               />
             ))}
           </AnimatePresence>
-
+ 
           <GrammarImporter onImport={handleImport} />
         </div>
-
+ 
         <GrammarForm 
           editingId={editingId}
           name={name}
@@ -96,6 +101,6 @@ export const GrammarView: React.FC<GrammarViewProps> = ({ grammarPoints, setGram
           onCancel={clearForm}
         />
       </div>
-    </div>
+    </motion.div>
   );
 };

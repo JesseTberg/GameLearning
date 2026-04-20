@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'motion/react';
 import { NavSidebar } from './components/NavSidebar';
 import { ReaderViewport } from './components/viewport/ReaderViewport';
 import { GrammarView } from './components/grammar/GrammarView';
@@ -7,22 +8,22 @@ import { FlashcardsView } from './components/flashcards/FlashcardsView';
 import { HistoryView } from './components/history/HistoryView';
 import { GrammarPoint, Flashcard, CapturedText, Deck } from './types';
 import { Panel } from './components/ui/Panel';
+import { cn } from './lib/utils';
+import { ApiKeyModal } from './components/ApiKeyModal';
+import { API_KEY_CHANGE_EVENT, hasApiKey } from './lib/encryption';
+import { useScreenCapture } from './hooks/useScreenCapture';
 
 const DEFAULT_GRAMMAR_POINTS: GrammarPoint[] = [
   { id: '1', name: 'て-form', description: 'Used for connecting sentences, requests, and ongoing actions.', pattern: 'verb[te]' },
   { id: '2', name: 'Passive Voice (れる/られる)', description: 'Expresses that an action is being done to the subject.', pattern: 'verb[reru]' }
 ];
 
-import { cn } from './lib/utils';
-import { ApiKeyModal } from './components/ApiKeyModal';
-import { API_KEY_CHANGE_EVENT, hasApiKey } from './lib/encryption';
-import { useScreenCapture } from './hooks/useScreenCapture';
-
 const DEFAULT_DECKS: Deck[] = [
   { id: 'default', name: 'General', color: '#3b82f6', createdAt: Date.now() }
 ];
 
 export default function App() {
+  const location = useLocation();
   const [grammarPoints, setGrammarPoints] = useState<GrammarPoint[]>(DEFAULT_GRAMMAR_POINTS);
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [decks, setDecks] = useState<Deck[]>(DEFAULT_DECKS);
@@ -33,13 +34,11 @@ export default function App() {
   const [hasKey, setHasKey] = useState(hasApiKey());
   const [selectedModel, setSelectedModel] = useState('gemini-3-flash-preview');
 
-  // Set global variables for the service to pick up
   React.useEffect(() => {
     (window as any)._AI_MODEL = selectedModel;
     (window as any)._AI_PROVIDER = 'gemini';
   }, [selectedModel]);
 
-  // Listen for key changes without reload
   React.useEffect(() => {
     const handleKeyChange = () => setHasKey(hasApiKey());
     window.addEventListener(API_KEY_CHANGE_EVENT, handleKeyChange);
@@ -52,7 +51,6 @@ export default function App() {
     return "QUOTA VARIES";
   };
 
-  // Prep Area state lifted for access from History
   const [prepCard, setPrepCard] = useState<Partial<Flashcard>>({
     front: '',
     reading: '',
@@ -69,7 +67,6 @@ export default function App() {
     });
   };
 
-  // Capture state moved here for persistence
   const capture = useScreenCapture();
 
   return (
@@ -81,7 +78,6 @@ export default function App() {
       />
 
       <main className={cn("flex-1 transition-all duration-300", isCollapsed ? "ml-20" : "ml-80")}>
-        {/* Global Toolbar */}
         <Panel variant="header">
           <div className="text-[10px] font-mono text-text-dim flex items-center gap-8">
             <div className="flex items-center gap-3">
@@ -99,7 +95,6 @@ export default function App() {
 
             <div className="h-3 w-[1px] bg-white/10" />
 
-            {/* Model Selector */}
             <div className="flex flex-col gap-1">
               <span className="text-[8px] text-white/30 uppercase font-bold">Active Engine</span>
               <select 
@@ -138,48 +133,58 @@ export default function App() {
         </Panel>
 
         <div className="p-8 max-w-[1800px] mx-auto">
-          <Routes>
-            <Route path="/" element={
-              <ReaderViewport 
-                grammarPoints={grammarPoints}
-                setFlashcards={setFlashcards}
-                setCapturedTexts={setCapturedTexts}
-                showTranslation={showTranslation}
-                onToggleTranslation={() => setShowTranslation(!showTranslation)}
-                capture={capture}
-                prepCard={prepCard}
-                setPrepCard={setPrepCard}
-                decks={decks}
-              />
-            } />
-            
-            <Route path="/grammar" element={
-              <GrammarView 
-                grammarPoints={grammarPoints} 
-                setGrammarPoints={setGrammarPoints} 
-              />
-            } />
-            
-            <Route path="/flashcards" element={
-              <FlashcardsView 
-                flashcards={flashcards} 
-                setFlashcards={setFlashcards} 
-                decks={decks}
-                setDecks={setDecks}
-              />
-            } />
-            
-            <Route path="/history" element={
-              <HistoryView 
-                capturedTexts={capturedTexts} 
-                onTransferToPrep={onTransferToPrep}
-                prepCard={prepCard}
-                setPrepCard={setPrepCard}
-                setFlashcards={setFlashcards}
-                decks={decks}
-              />
-            } />
-          </Routes>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
+              <Routes location={location}>
+                <Route path="/" element={
+                  <ReaderViewport 
+                    grammarPoints={grammarPoints}
+                    setFlashcards={setFlashcards}
+                    setCapturedTexts={setCapturedTexts}
+                    showTranslation={showTranslation}
+                    onToggleTranslation={() => setShowTranslation(!showTranslation)}
+                    capture={capture}
+                    prepCard={prepCard}
+                    setPrepCard={setPrepCard}
+                    decks={decks}
+                  />
+                } />
+                
+                <Route path="/grammar" element={
+                  <GrammarView 
+                    grammarPoints={grammarPoints} 
+                    setGrammarPoints={setGrammarPoints} 
+                  />
+                } />
+                
+                <Route path="/flashcards" element={
+                  <FlashcardsView 
+                    flashcards={flashcards} 
+                    setFlashcards={setFlashcards} 
+                    decks={decks}
+                    setDecks={setDecks}
+                  />
+                } />
+                
+                <Route path="/history" element={
+                  <HistoryView 
+                    capturedTexts={capturedTexts} 
+                    onTransferToPrep={onTransferToPrep}
+                    prepCard={prepCard}
+                    setPrepCard={setPrepCard}
+                    setFlashcards={setFlashcards}
+                    decks={decks}
+                  />
+                } />
+              </Routes>
+            </motion.div>
+          </AnimatePresence>
         </div>
       </main>
 

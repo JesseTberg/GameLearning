@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'motion/react';
 import { cn } from '../../lib/utils';
 
 interface CardProps {
@@ -16,11 +15,7 @@ export const Card: React.FC<CardProps> = ({
   isHoverable = true 
 }) => {
   return (
-    <motion.div 
-      layout
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
+    <div
       onClick={onClick}
       className={cn(
         "bg-sidebar border border-border rounded-xl relative overflow-hidden transition-all",
@@ -30,6 +25,6 @@ export const Card: React.FC<CardProps> = ({
       )}
     >
       {children}
-    </motion.div>
+    </div>
   );
 };

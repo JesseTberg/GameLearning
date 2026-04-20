@@ -193,7 +193,12 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
     const current = studySession[currentIndex];
     
     return (
-      <div className="space-y-6 max-w-4xl mx-auto">
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="space-y-6 max-w-4xl mx-auto"
+      >
         <SectionHeader 
           title="Study Session" 
           subtitle={`${currentIndex + 1} of ${studySession.length}`} 
@@ -287,14 +292,19 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
             Next <ChevronRight size={16} />
           </Button>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   // Deck List View
   if (!activeDeckId) {
     return (
-      <div className="space-y-8">
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="space-y-8"
+      >
         <SectionHeader title="Your Decks" rightAction={headerRight} />
 
         <AnimatePresence>
@@ -376,7 +386,7 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
             <p className="font-bold uppercase tracking-widest">No decks found</p>
           </div>
         )}
-      </div>
+      </motion.div>
     );
   }
 
@@ -385,7 +395,12 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
   const deckCards = flashcards.filter(f => f.deckId === activeDeckId);
 
   return (
-    <div className="space-y-6 relative">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="space-y-6 relative"
+    >
       <SectionHeader 
         title={currentDeck?.name || 'Deck'} 
         subtitle={`${deckCards.length} Cards`}
@@ -475,6 +490,6 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
           </AnimatePresence>
         </Grid>
       )}
-    </div>
+    </motion.div>
   );
 };

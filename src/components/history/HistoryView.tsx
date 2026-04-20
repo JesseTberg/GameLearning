@@ -1,5 +1,5 @@
 import React from 'react';
-import { AnimatePresence } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { History as HistoryIcon } from 'lucide-react';
 import { SectionHeader } from '../ui/SectionHeader';
 import { Grid } from '../ui/Grid';
@@ -25,7 +25,12 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
   decks
 }) => {
   return (
-    <div className="space-y-6">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="space-y-6"
+    >
       <SectionHeader title="Past Scans" subtitle="Review your past captures and create flashcards" />
 
       {capturedTexts.length === 0 ? (
@@ -65,6 +70,6 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
