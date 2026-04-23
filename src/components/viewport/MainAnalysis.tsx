@@ -8,6 +8,7 @@ interface MainAnalysisProps {
   currentAnalysis: any;
   lensResult?: any;
   isLoading?: boolean;
+  isAnalyzing?: boolean;
   showTranslation: boolean;
   onToggleTranslation: () => void;
   onWordClick: (word: any) => void;
@@ -18,6 +19,7 @@ export const MainAnalysis: React.FC<MainAnalysisProps> = ({
   currentAnalysis, 
   lensResult,
   isLoading,
+  isAnalyzing,
   showTranslation,
   onToggleTranslation,
   onWordClick,
@@ -89,22 +91,41 @@ export const MainAnalysis: React.FC<MainAnalysisProps> = ({
 
             {!isLoading && (
               <>
-                <div className="pt-6 border-t border-border/30 space-y-3">
-                  <p className="text-[10px] text-text-dim uppercase tracking-widest font-bold">Full Transcript</p>
-                  <div className="text-xl font-bold text-white leading-relaxed tracking-tight bg-white/5 p-4 rounded-lg border border-white/5">
-                    {currentAnalysis.extractedText}
+                {isAnalyzing ? (
+                  <div className="pt-6 border-t border-border/30 animate-pulse">
+                     <div className="flex items-center gap-3 mb-4">
+                        <Sparkles size={14} className="text-amber-500 animate-spin" />
+                        <p className="text-[10px] text-amber-500 uppercase tracking-widest font-bold">Linguistic Analysis in progress...</p>
+                     </div>
+                     <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                        <motion.div 
+                          className="h-full bg-amber-500"
+                          initial={{ width: "0%" }}
+                          animate={{ width: "100%" }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        />
+                     </div>
                   </div>
-                </div>
-                
-                {showTranslation && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-sm text-text-main/80 bg-bg/50 p-4 rounded-lg border border-border/50"
-                  >
-                    <p className="text-[10px] text-text-dim uppercase tracking-widest mb-2 font-bold">Full Translation</p>
-                    <p className="italic leading-relaxed font-medium">"{currentAnalysis.translation}"</p>
-                  </motion.div>
+                ) : (
+                  <>
+                    <div className="pt-6 border-t border-border/30 space-y-3">
+                      <p className="text-[10px] text-text-dim uppercase tracking-widest font-bold">Full Transcript</p>
+                      <div className="text-xl font-bold text-white leading-relaxed tracking-tight bg-white/5 p-4 rounded-lg border border-white/5">
+                        {currentAnalysis.extractedText}
+                      </div>
+                    </div>
+                    
+                    {showTranslation && currentAnalysis.translation && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-sm text-text-main/80 bg-bg/50 p-4 rounded-lg border border-border/50"
+                      >
+                        <p className="text-[10px] text-text-dim uppercase tracking-widest mb-2 font-bold">Full Translation</p>
+                        <p className="italic leading-relaxed font-medium">"{currentAnalysis.translation}"</p>
+                      </motion.div>
+                    )}
+                  </>
                 )}
               </>
             )}

@@ -15,7 +15,11 @@ import { useScreenCapture } from './hooks/useScreenCapture';
 
 const DEFAULT_GRAMMAR_POINTS: GrammarPoint[] = [
   { id: '1', name: 'て-form', description: 'Used for connecting sentences, requests, and ongoing actions.', pattern: 'verb[te]' },
-  { id: '2', name: 'Passive Voice (れる/られる)', description: 'Expresses that an action is being done to the subject.', pattern: 'verb[reru]' }
+  { id: '2', name: 'Passive Voice (れる/られる)', description: 'Expresses that an action is being done to the subject.', pattern: 'verb[reru]' },
+  { id: '3', name: 'Obligation (べき)', description: 'Indicates that something should be done or is the logical/moral course of action.', pattern: 'verb[dictionary] + べき'},
+  { id: '4', name: 'Third-Party Desire (~たがる)', description: 'Used to describe the desires of someone other than the speaker based on their behavior.', pattern: 'verb[stem] + たがる' },
+  { id: '5', name: 'Expectation (はず)', description: 'Expresses a strong belief or expectation that something is true based on reasoning.', pattern: 'verb[dictionary/past] + はず' },
+  { id: '6', name: 'Preparation Aspect (~ておく)', description: 'Indicates doing something in advance or for future use/convenience.', pattern: 'verb[te] + おく' }
 ];
 
 const DEFAULT_DECKS: Deck[] = [

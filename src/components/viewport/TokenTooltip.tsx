@@ -3,7 +3,12 @@ import { motion } from 'motion/react';
 import { Brain } from 'lucide-react';
 
 interface TokenTooltipProps {
-  token: { word: string; reading?: string; translation: string; };
+  token: { 
+    word: string; 
+    reading?: string; 
+    translation: string; 
+    partOfSpeech?: string; 
+  };
   grammarMatch?: { pointName: string; explanation: string; };
 }
 
@@ -21,9 +26,14 @@ export const TokenTooltip: React.FC<TokenTooltipProps> = ({ token, grammarMatch 
         </div>
       )}
       <div className="text-sm font-bold text-white mb-1 decoration-accent-light underline underline-offset-2">{token.word}</div>
-      <div className="text-[11px] text-text-dim italic leading-tight">
+      <div className="text-[11px] text-text-dim italic leading-tight mb-1">
         {token.translation}
       </div>
+      {token.partOfSpeech && (
+        <div className="text-[8px] font-bold text-blue-400 uppercase tracking-widest bg-blue-400/10 px-1 rounded inline-block">
+          {token.partOfSpeech}
+        </div>
+      )}
       {grammarMatch && (
         <div className="mt-2 pt-2 border-t border-border flex items-start gap-2">
           <Brain size={10} className="text-amber-500 shrink-0 mt-0.5" />

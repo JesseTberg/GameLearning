@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { analyzeGameRegion, performLensAnalysis, analyzeText } from '../services/gemini';
+import { analyzeGameRegion, performLensAnalysis, analyzeText, transcribeImage } from '../services/gemini';
 import { GrammarPoint, CapturedText, LensResult } from '../types';
 
 export function useOCR(grammarPoints: GrammarPoint[], setCapturedTexts: React.Dispatch<React.SetStateAction<CapturedText[]>>) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentAnalysis, setCurrentAnalysis] = useState<any>(null);
   const [lensResult, setLensResult] = useState<LensResult | null>(null);
@@ -12,16 +13,28 @@ export function useOCR(grammarPoints: GrammarPoint[], setCapturedTexts: React.Di
     setIsLoading(true);
     setError(null);
     try {
-      const result = await analyzeGameRegion(base64Image, grammarPoints);
-      setCurrentAnalysis(result);
+      // Step 1: Transcription (OCR + Words)
+      const transcript = await transcribeImage(base64Image);
+      setCurrentAnalysis(transcript);
+      
+      // Step 2: Auto-trigger Deep Analysis
+      setIsAnalyzing(true);
+      const deepResult = await analyzeText(transcript.extractedText, grammarPoints);
+      
+      const fullResult = {
+        ...transcript,
+        ...deepResult
+      };
+      
+      setCurrentAnalysis(fullResult);
       
       const newCapture: CapturedText = {
         id: Math.random().toString(36).substr(2, 9),
-        raw: result.extractedText,
+        raw: fullResult.extractedText,
         timestamp: Date.now(),
-        translation: result.translation,
-        words: result.words || [],
-        grammarMatches: result.grammarMatches?.map((m: any) => ({
+        translation: fullResult.translation,
+        words: fullResult.words || [],
+        grammarMatches: fullResult.grammarMatches?.map((m: any) => ({
           pointId: grammarPoints.find(p => p.name === m.pointName)?.id || 'unknown',
           text: m.matchedText,
           explanation: m.explanation
@@ -29,7 +42,7 @@ export function useOCR(grammarPoints: GrammarPoint[], setCapturedTexts: React.Di
       };
       
       setCapturedTexts(prev => [newCapture, ...prev]);
-      return result;
+      return fullResult;
     } catch (err: any) {
       const msg = err.message || "Analysis failed";
       console.error("Analysis failed:", msg);
@@ -37,6 +50,7 @@ export function useOCR(grammarPoints: GrammarPoint[], setCapturedTexts: React.Di
       throw err;
     } finally {
       setIsLoading(false);
+      setIsAnalyzing(false);
     }
   }, [grammarPoints, setCapturedTexts]);
 
@@ -79,6 +93,7 @@ export function useOCR(grammarPoints: GrammarPoint[], setCapturedTexts: React.Di
 
   return {
     isLoading,
+    isAnalyzing,
     error,
     setError,
     currentAnalysis,

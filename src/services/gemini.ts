@@ -117,6 +117,56 @@ export async function parseGrammarFromPdf(pdfBase64: string): Promise<GrammarPoi
   }));
 }
 
+export async function transcribeImage(base64Image: string) {
+  const prompt = `
+    Analyze this image and extract all text.
+    
+    1. EXTRACT TEXT: Perform highly accurate OCR.
+    2. TOKENS: Break down the text into logical word units.
+       CRITICAL SEGMENTATION RULE: Keep conjugated words (verbs, adjectives, etc.) as a single segment. DO NOT split word stems from suffixes.
+       CRITICAL RECONSTRUCTION RULE: Every single character, space, and punctuation mark MUST be included. Joining 'word' fields must result in the exact source string.
+       
+    Provide for each segment:
+    - word: the original text segment
+    - reading: phonetic reading if applicable
+    - translation: simple English meaning
+    - partOfSpeech: linguistic role (Noun, Verb, etc.)
+    - isFunctional: boolean (particles/markers)
+    
+    Respond in JSON.
+  `;
+
+  const text = await callGeminiThroughProxy({
+    prompt,
+    mimeType: "image/png",
+    base64Data: base64Image,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          extractedText: { type: Type.STRING },
+          words: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                word: { type: Type.STRING },
+                reading: { type: Type.STRING },
+                translation: { type: Type.STRING },
+                partOfSpeech: { type: Type.STRING },
+                isFunctional: { type: Type.BOOLEAN },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return JSON.parse(sanitizeJson(text || '{}'));
+}
+
 export async function analyzeGameRegion(base64Image: string, grammarPoints: GrammarPoint[]) {
   const grammarContext = grammarPoints.map(p => `- ${p.name}: ${p.description} (Pattern: ${p.pattern})`).join('\n');
   
@@ -125,17 +175,20 @@ export async function analyzeGameRegion(base64Image: string, grammarPoints: Gram
     
     1. EXTRACT TEXT: Perform OCR on the image. Extract every word accurately.
     2. TRANSLATE: Provide a natural translation of the full text.
-    3. TOKENS: Break down the extracted text into individual words or segments. 
+    3. TOKENS: Break down the extracted text into logical word segments. 
+       CRITICAL SEGMENTATION RULE: Keep conjugated words (verbs, adjectives, etc.) as a single segment. DO NOT split a word's stem from its conjugation suffix or inflections. Each segment should be a complete word unit or a functional particle.
        CRITICAL RECONSTRUCTION RULE: Every single character, space, and punctuation mark from the original text MUST be included in the tokens list. 
        The list of 'word' fields, when joined, must be IDENTICAL to the source text. 
-       Do not skip particles like 'は', 'の', or punctuation like '「', '」', '？'.
        For each segment, provide:
        - word: the original text segment (including whitespace/punctuation as their own tokens)
        - reading: the reading (like Furigana/Pinyin) if applicable (leave null for punctuation/whitespace)
-       - translation: a single-word translation (leave null for punctuation/whitespace)
-       - isFunctional: boolean, true for markers, particles, or structural segments.
+       - translation: a single-word or phrase translation (leave null for punctuation/whitespace)
+       - partOfSpeech: Identifiy the part of speech (Noun, Verb, Particle, Adjective, Punctuation, etc.)
+       - isFunctional: boolean, true for markers, particles, or structural segments. DO NOT mark conjugation suffixes as functional; they must be part of the main word.
     4. GRAMMAR AUDIT: Check if any of these specific grammar points appear in the text:
     ${grammarContext}
+    
+    CRITICAL GRAMMAR RULE: Only include a match if it is CONTEXTUALLY RELEVANT. For example, if the grammar point is "te-form", do not match words that simply contain "て" (like "手" or "手帳") unless they are actually verbs in the te-form. Each match must be a genuine instance of that specific grammatical rule in this sentence.
     
     5. FLASHCARDS SUGGESTIONS: Identify 2-3 high-value vocabulary words.
 
@@ -161,6 +214,7 @@ export async function analyzeGameRegion(base64Image: string, grammarPoints: Gram
                 word: { type: Type.STRING },
                 reading: { type: Type.STRING },
                 translation: { type: Type.STRING },
+                partOfSpeech: { type: Type.STRING },
                 isFunctional: { type: Type.BOOLEAN },
               },
             },
@@ -249,17 +303,21 @@ export async function analyzeText(textToAnalyze: string, grammarPoints: GrammarP
     Analyze this text for language learning.
     
     1. TRANSLATE: Provide a natural translation of the full text.
-    2. TOKENS: Break down the text into individual words or segments.
+    2. TOKENS: Break down the text into logical word segments.
+       CRITICAL SEGMENTATION RULE: Keep conjugated words (verbs, adjectives, etc.) as a single segment. DO NOT split a word's stem from its conjugation suffix or inflections. Each segment should be a complete word unit or a functional particle.
        CRITICAL RECONSTRUCTION RULE: Every single character, space, and punctuation mark from the original text MUST be included in the tokens list. 
        The list of 'word' fields, when joined, must be IDENTICAL to the source text. 
        Do not skip anything.
        For each segment, provide:
        - word: the original text segment (including whitespace/punctuation as their own tokens)
        - reading: the reading if applicable
-       - translation: a single-word translation
-       - isFunctional: boolean, true for particles or structural segments.
+       - translation: a single-word or phrase translation
+       - partOfSpeech: The linguistic role (Noun, Verb, Particle, etc.)
+       - isFunctional: boolean, true for markers, particles, or structural segments. DO NOT mark conjugation suffixes as functional; they must be part of the main word.
     3. GRAMMAR AUDIT: Check if any of these specific grammar points appear in the text:
     ${grammarContext}
+
+    CRITICAL GRAMMAR RULE: Only include a match if it is CONTEXTUALLY RELEVANT and syntactically correct for that rule. Do not match tokens based on substring pattern matching alone. Verify that the word's Part of Speech matches the grammar rule's requirements.
 
     Format the response as JSON.
   `;
@@ -280,6 +338,7 @@ export async function analyzeText(textToAnalyze: string, grammarPoints: GrammarP
                 word: { type: Type.STRING },
                 reading: { type: Type.STRING },
                 translation: { type: Type.STRING },
+                partOfSpeech: { type: Type.STRING },
                 isFunctional: { type: Type.BOOLEAN },
               },
             },
