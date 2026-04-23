@@ -4,6 +4,7 @@ import { CaptureCanvas } from './CaptureCanvas';
 import { MainAnalysis } from './MainAnalysis';
 import { QuickActions } from './QuickActions';
 import { LensOverlay } from './LensOverlay';
+import { CapturePreview } from './CapturePreview';
 import { SectionHeader } from '../ui/SectionHeader';
 import { useScreenCapture } from '../../hooks/useScreenCapture';
 import { useSelectionBox } from '../../hooks/useSelectionBox';
@@ -42,6 +43,7 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
   const [lastMousePos, setLastMousePos] = React.useState({ x: 0, y: 0 });
   const [isLensVisible, setIsLensVisible] = React.useState(false);
   const [isPrepVisible, setIsPrepVisible] = React.useState(true);
+  const [pendingCapture, setPendingCapture] = React.useState<{ image: string, type: 'ocr' | 'lens' } | null>(null);
   
   const {
     isCapturing,
@@ -63,6 +65,7 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
 
   const {
     isLoading,
+    isAnalyzing,
     currentAnalysis,
     lensResult,
     setLensResult,
@@ -138,12 +141,7 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
     // Switched to jpeg at 0.8 quality for Vercel compatibility
     const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
     
-    setIsLensVisible(true);
-    try {
-      await performLens(base64Image);
-    } catch (err) {
-      setIsLensVisible(false);
-    }
+    setPendingCapture({ image: base64Image, type: 'lens' });
   };
 
   const handleResetZoom = () => {
@@ -260,11 +258,26 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
 
     // Switched to jpeg at 0.8 quality to keep payload small for Vercel (4.5MB limit)
     const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+    setPendingCapture({ image: base64Image, type: 'ocr' });
+  };
+
+  const handleConfirmCapture = async () => {
+    if (!pendingCapture) return;
+    
+    const { image, type } = pendingCapture;
+    
     try {
-      await performOCR(base64Image);
-      resetSelection();
+      if (type === 'lens') {
+        setIsLensVisible(true);
+        setPendingCapture(null);
+        await performLens(image);
+      } else {
+        setPendingCapture(null);
+        await performOCR(image);
+        resetSelection();
+      }
     } catch (err) {
-      // Error handled in hook
+      setIsLensVisible(false);
     }
   };
 
@@ -374,6 +387,7 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
             currentAnalysis={currentAnalysis} 
             lensResult={lensResult}
             isLoading={isLoading}
+            isAnalyzing={isAnalyzing}
             showTranslation={showTranslation} 
             onToggleTranslation={onToggleTranslation}
             onWordClick={onTransferWord}
@@ -397,6 +411,13 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
       </div>
 
       <canvas ref={canvasRef} className="hidden" />
+
+      <CapturePreview 
+        image={pendingCapture?.image || null}
+        isLoading={isLoading}
+        onConfirm={handleConfirmCapture}
+        onCancel={() => setPendingCapture(null)}
+      />
     </div>
   );
 };

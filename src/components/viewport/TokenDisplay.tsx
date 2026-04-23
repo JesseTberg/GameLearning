@@ -15,22 +15,30 @@ export const TokenDisplay: React.FC<TokenDisplayProps> = ({ tokens, grammarMatch
   if (!tokens || tokens.length === 0) return null;
 
   return (
-    <div className="text-3xl font-bold text-white leading-relaxed flex flex-wrap gap-x-3 gap-y-2">
+    <div className="text-3xl font-bold text-white leading-relaxed flex flex-wrap items-baseline">
       {tokens.map((token: any, i: number) => {
+        const isWhitespace = /^\s+$/.test(token.word);
+        const isPunctuation = /^[.,!?:; "'「」？！…\(\)（）]+$/.test(token.word);
+        
+        if (isWhitespace) {
+          return <span key={i} className="whitespace-pre">{token.word}</span>;
+        }
+
         const grammarMatch = grammarMatches?.find((m: any) => m.matchedText.includes(token.word));
+        
         return (
           <div 
             key={i} 
-            className="relative group/token h-fit"
+            className="relative group/token h-fit mx-[1px]"
             onMouseEnter={() => setHoveredWord(token)}
             onMouseLeave={() => setHoveredWord(null)}
             onClick={() => onWordClick(token)}
           >
             <span className={cn(
-              "cursor-pointer transition-all decoration-2 underline-offset-8",
+              "cursor-pointer transition-all decoration-2 underline-offset-8 px-0.5 rounded hover:bg-white/5",
               grammarMatch 
                 ? "text-token-grammar underline decoration-token-grammar/50" 
-                : token.isFunctional 
+                : token.isFunctional || isPunctuation
                   ? "text-token-functional/80 font-medium hover:text-white" 
                   : "text-token-standard hover:text-token-hover"
             )}>
