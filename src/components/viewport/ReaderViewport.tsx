@@ -65,7 +65,6 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
 
   const {
     isLoading,
-    isAnalyzing,
     currentAnalysis,
     lensResult,
     setLensResult,
@@ -387,7 +386,6 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
             currentAnalysis={currentAnalysis} 
             lensResult={lensResult}
             isLoading={isLoading}
-            isAnalyzing={isAnalyzing}
             showTranslation={showTranslation} 
             onToggleTranslation={onToggleTranslation}
             onWordClick={onTransferWord}

@@ -10,13 +10,23 @@ interface TokenDisplayProps {
 }
 
 export const TokenDisplay: React.FC<TokenDisplayProps> = ({ tokens, grammarMatches, onWordClick }) => {
-  const [hoveredWord, setHoveredWord] = useState<any>(null);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   if (!tokens || tokens.length === 0) return null;
 
   return (
-    <div className="text-3xl font-bold text-white leading-relaxed flex flex-wrap items-baseline">
+    <div className="text-3xl font-bold text-white leading-relaxed flex flex-wrap items-baseline gap-y-2">
       {tokens.map((token: any, i: number) => {
+        // Handle explicit newlines from AI
+        if (token.word.includes('\n')) {
+          return (
+            <React.Fragment key={i}>
+              <div className="basis-full h-0" />
+              {token.word.includes('\n\n') && <div className="basis-full h-4" />}
+            </React.Fragment>
+          );
+        }
+
         const isWhitespace = /^\s+$/.test(token.word);
         const isPunctuation = /^[.,!?:; "'「」？！…\(\)（）]+$/.test(token.word);
         
@@ -30,8 +40,8 @@ export const TokenDisplay: React.FC<TokenDisplayProps> = ({ tokens, grammarMatch
           <div 
             key={i} 
             className="relative group/token h-fit mx-[1px]"
-            onMouseEnter={() => setHoveredWord(token)}
-            onMouseLeave={() => setHoveredWord(null)}
+            onMouseEnter={() => setHoveredIndex(i)}
+            onMouseLeave={() => setHoveredIndex(null)}
             onClick={() => onWordClick(token)}
           >
             <span className={cn(
@@ -46,7 +56,7 @@ export const TokenDisplay: React.FC<TokenDisplayProps> = ({ tokens, grammarMatch
             </span>
             
             <AnimatePresence>
-              {hoveredWord === token && (
+              {hoveredIndex === i && (
                 <TokenTooltip token={token} grammarMatch={grammarMatch} />
               )}
             </AnimatePresence>

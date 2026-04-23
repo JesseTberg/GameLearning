@@ -129,7 +129,7 @@ export async function transcribeImage(base64Image: string) {
     Provide for each segment:
     - word: the original text segment
     - reading: phonetic reading if applicable
-    - translation: simple English meaning
+    - translation: (Required) Provide an accurate English translation for every word, particle, and structural marker. ONLY leave as null for pure punctuation or whitespace.
     - partOfSpeech: linguistic role (Noun, Verb, etc.)
     - isFunctional: boolean (particles/markers)
     
@@ -182,8 +182,8 @@ export async function analyzeGameRegion(base64Image: string, grammarPoints: Gram
        For each segment, provide:
        - word: the original text segment (including whitespace/punctuation as their own tokens)
        - reading: the reading (like Furigana/Pinyin) if applicable (leave null for punctuation/whitespace)
-       - translation: a single-word or phrase translation (leave null for punctuation/whitespace)
-       - partOfSpeech: Identifiy the part of speech (Noun, Verb, Particle, Adjective, Punctuation, etc.)
+       - translation: (Required) Provide an accurate English translation for every word, particle, and structural marker. ONLY leave as null for pure punctuation or whitespace.
+       - partOfSpeech: Identify the linguistic role (Noun, Verb, Particle, Adjective, Punctuation, etc.)
        - isFunctional: boolean, true for markers, particles, or structural segments. DO NOT mark conjugation suffixes as functional; they must be part of the main word.
     4. GRAMMAR AUDIT: Check if any of these specific grammar points appear in the text:
     ${grammarContext}
@@ -311,7 +311,7 @@ export async function analyzeText(textToAnalyze: string, grammarPoints: GrammarP
        For each segment, provide:
        - word: the original text segment (including whitespace/punctuation as their own tokens)
        - reading: the reading if applicable
-       - translation: a single-word or phrase translation
+       - translation: (Required) Provide an accurate English translation for every word, particle, and structural marker. ONLY leave as null for pure punctuation or whitespace.
        - partOfSpeech: The linguistic role (Noun, Verb, Particle, etc.)
        - isFunctional: boolean, true for markers, particles, or structural segments. DO NOT mark conjugation suffixes as functional; they must be part of the main word.
     3. GRAMMAR AUDIT: Check if any of these specific grammar points appear in the text:
