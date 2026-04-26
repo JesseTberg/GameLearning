@@ -18,6 +18,7 @@ interface ReaderViewportProps {
   setCapturedTexts: React.Dispatch<React.SetStateAction<CapturedText[]>>;
   showTranslation: boolean;
   onToggleTranslation: () => void;
+  onAddGrammar?: (point: { name: string; description: string; pattern: string }) => void;
   capture: ReturnType<typeof useScreenCapture>;
   prepCard: Partial<Flashcard>;
   setPrepCard: React.Dispatch<React.SetStateAction<Partial<Flashcard>>>;
@@ -30,6 +31,7 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
   setCapturedTexts,
   showTranslation,
   onToggleTranslation,
+  onAddGrammar,
   capture,
   prepCard,
   setPrepCard,
@@ -72,6 +74,7 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
     performLens,
     performTextAnalysis,
     setCurrentAnalysis,
+    loadDemoData,
     error: analysisError,
     setError: setAnalysisError
   } = useOCR(grammarPoints, setCapturedTexts);
@@ -303,6 +306,7 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
         onZoomChange={setZoom}
         onResetZoom={handleResetZoom}
         onTriggerLens={handleTriggerLens}
+        onLoadDemo={loadDemoData}
         isLensLoading={isLensVisible && isLoading}
         isOCRLoading={!isLensVisible && isLoading}
       />
@@ -390,6 +394,7 @@ export const ReaderViewport: React.FC<ReaderViewportProps> = ({
             onToggleTranslation={onToggleTranslation}
             onWordClick={onTransferWord}
             onBlockClick={handleLensBlockClick}
+            onAddGrammar={onAddGrammar}
           />
         </div>
 

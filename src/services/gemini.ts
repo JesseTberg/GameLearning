@@ -164,7 +164,9 @@ export async function transcribeImage(base64Image: string) {
     },
   });
 
-  return JSON.parse(sanitizeJson(text || '{}'));
+  const parsed = JSON.parse(sanitizeJson(text || '{}'));
+  console.log("[AI Response Raw - transcribeImage]:", parsed);
+  return parsed;
 }
 
 export async function analyzeGameRegion(base64Image: string, grammarPoints: GrammarPoint[]) {
@@ -190,7 +192,8 @@ export async function analyzeGameRegion(base64Image: string, grammarPoints: Gram
     
     CRITICAL GRAMMAR RULE: Only include a match if it is CONTEXTUALLY RELEVANT. For example, if the grammar point is "te-form", do not match words that simply contain "て" (like "手" or "手帳") unless they are actually verbs in the te-form. Each match must be a genuine instance of that specific grammatical rule in this sentence.
     
-    5. FLASHCARDS SUGGESTIONS: Identify 2-3 high-value vocabulary words.
+    5. GRAMMAR SUGGESTIONS: Identify any upper-intermediate (N2) or advanced (N1) Japanese grammar patterns present in the text that are NOT already listed in the GRAMMAR AUDIT section above. Do not suggest basic patterns (N5-N3).
+    6. FLASHCARDS SUGGESTIONS: Identify 2-3 high-value vocabulary words.
 
     Format the response as JSON.
   `;
@@ -230,6 +233,18 @@ export async function analyzeGameRegion(base64Image: string, grammarPoints: Gram
               },
             },
           },
+          suggestedGrammar: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                name: { type: Type.STRING },
+                description: { type: Type.STRING },
+                pattern: { type: Type.STRING },
+                matchedText: { type: Type.STRING },
+              },
+            },
+          },
           flashcards: {
             type: Type.ARRAY,
             items: {
@@ -246,7 +261,9 @@ export async function analyzeGameRegion(base64Image: string, grammarPoints: Gram
     },
   });
 
-  return JSON.parse(sanitizeJson(text || '{}'));
+  const parsed = JSON.parse(sanitizeJson(text || '{}'));
+  console.log("[AI Response Raw - analyzeGameRegion]:", parsed);
+  return parsed;
 }
 
 export async function performLensAnalysis(base64Image: string) {
@@ -293,7 +310,9 @@ export async function performLensAnalysis(base64Image: string) {
     },
   });
 
-  return JSON.parse(sanitizeJson(text || '{"blocks": []}'));
+  const parsed = JSON.parse(sanitizeJson(text || '{"blocks": []}'));
+  console.log("[AI Response Raw - performLensAnalysis]:", parsed);
+  return parsed;
 }
 
 export async function analyzeText(textToAnalyze: string, grammarPoints: GrammarPoint[]) {
@@ -318,6 +337,8 @@ export async function analyzeText(textToAnalyze: string, grammarPoints: GrammarP
     ${grammarContext}
 
     CRITICAL GRAMMAR RULE: Only include a match if it is CONTEXTUALLY RELEVANT and syntactically correct for that rule. Do not match tokens based on substring pattern matching alone. Verify that the word's Part of Speech matches the grammar rule's requirements.
+
+    4. GRAMMAR SUGGESTIONS: Identify any upper-intermediate (N2) or advanced (N1) Japanese grammar patterns present in the text that are NOT already listed in the GRAMMAR AUDIT section above. Do not suggest basic patterns (N5-N3).
 
     Format the response as JSON.
   `;
@@ -354,12 +375,25 @@ export async function analyzeText(textToAnalyze: string, grammarPoints: GrammarP
               },
             },
           },
+          suggestedGrammar: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                name: { type: Type.STRING },
+                description: { type: Type.STRING },
+                pattern: { type: Type.STRING },
+                matchedText: { type: Type.STRING },
+              },
+            },
+          },
         },
       },
     },
   });
 
   const parsed = JSON.parse(sanitizeJson(responseText || '{}'));
+  console.log("[AI Response Raw - analyzeText]:", parsed);
   return {
     ...parsed,
     extractedText: textToAnalyze

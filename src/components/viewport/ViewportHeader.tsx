@@ -11,6 +11,7 @@ interface ViewportHeaderProps {
   onZoomChange: (zoom: number) => void;
   onResetZoom: () => void;
   onTriggerLens?: () => void;
+  onLoadDemo?: () => void;
   isLensLoading?: boolean;
   isOCRLoading?: boolean;
 }
@@ -23,6 +24,7 @@ export const ViewportHeader: React.FC<ViewportHeaderProps> = ({
   onZoomChange,
   onResetZoom,
   onTriggerLens,
+  onLoadDemo,
   isLensLoading,
   isOCRLoading
 }) => {
@@ -75,6 +77,14 @@ export const ViewportHeader: React.FC<ViewportHeaderProps> = ({
       </div>
 
       <div className="flex gap-2">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={onLoadDemo}
+          className="text-[10px] uppercase tracking-widest font-bold opacity-60 hover:opacity-100"
+        >
+          Load Demo
+        </Button>
         {isCapturing && (
           <Button 
             variant="accent-ghost" 

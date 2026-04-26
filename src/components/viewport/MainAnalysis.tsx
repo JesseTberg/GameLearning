@@ -12,6 +12,7 @@ interface MainAnalysisProps {
   onToggleTranslation: () => void;
   onWordClick: (word: any) => void;
   onBlockClick?: (text: string) => void;
+  onAddGrammar?: (point: { name: string; description: string; pattern: string }) => void;
 }
 
 export const MainAnalysis: React.FC<MainAnalysisProps> = ({ 
@@ -21,7 +22,8 @@ export const MainAnalysis: React.FC<MainAnalysisProps> = ({
   showTranslation,
   onToggleTranslation,
   onWordClick,
-  onBlockClick
+  onBlockClick,
+  onAddGrammar
 }) => {
   if (!currentAnalysis && !lensResult) {
     return (
@@ -104,6 +106,45 @@ export const MainAnalysis: React.FC<MainAnalysisProps> = ({
                   >
                     <p className="text-[10px] text-text-dim uppercase tracking-widest mb-2 font-bold">Full Translation</p>
                     <p className="italic leading-relaxed font-medium">"{currentAnalysis.translation}"</p>
+                  </motion.div>
+                )}
+
+                {currentAnalysis.suggestedGrammar && currentAnalysis.suggestedGrammar.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="pt-6 border-t border-border/30 space-y-4"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Sparkles size={14} className="text-amber-500" />
+                      <p className="text-[10px] text-amber-500 uppercase tracking-widest font-bold">Advanced Grammar Insights (N2/N1)</p>
+                    </div>
+                    
+                    <div className="grid gap-3">
+                      {currentAnalysis.suggestedGrammar.map((suggest: any, si: number) => (
+                        <div key={si} className="bg-white/5 p-4 rounded-lg border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
+                          <div className="space-y-1">
+                            <div className="flex items-baseline gap-2">
+                              <h4 className="text-sm font-bold text-white">{suggest.name}</h4>
+                              <span className="text-[10px] font-mono text-text-dim">{suggest.pattern}</span>
+                            </div>
+                            <p className="text-xs text-text-dim leading-relaxed">{suggest.description}</p>
+                            <div className="text-[10px] text-blue-400 font-mono italic text-wrap break-all">Context: "{suggest.matchedText}"</div>
+                          </div>
+                          
+                          <button 
+                            onClick={() => onAddGrammar?.({ 
+                              name: suggest.name, 
+                              description: suggest.description, 
+                              pattern: suggest.pattern 
+                            })}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600/10 text-blue-400 rounded text-[10px] font-bold uppercase hover:bg-blue-600 hover:text-white transition-all whitespace-nowrap self-start sm:self-center"
+                          >
+                            <Plus size={12} /> Add to Tracked
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </motion.div>
                 )}
               </>

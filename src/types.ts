@@ -1,6 +1,6 @@
 export interface WordAnalysis {
   word: string;
-  reading?: string; // Furigana/Pinyin
+  reading?: string | null; // Furigana/Pinyin
   translation: string;
 }
 
@@ -21,6 +21,12 @@ export interface CapturedText {
     pointId: string;
     text: string;
     explanation: string;
+  }[];
+  suggestedGrammar?: {
+    name: string;
+    description: string;
+    pattern: string;
+    matchedText: string;
   }[];
 }
 
