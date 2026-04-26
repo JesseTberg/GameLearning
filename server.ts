@@ -37,6 +37,7 @@ app.use(
 
 app.use(express.json({ limit: '10mb' }));
 
+// API routes FIRST
 app.get("/api/health", (req, res) => {
   res.json({ 
     status: "ok", 
@@ -125,6 +126,11 @@ app.post("/api/ai-proxy", async (req, res) => {
 
     res.status(500).json({ error: `AI Assistant Error: ${errorMsg || 'Connection reset by peer. Please retry.'}` });
   }
+});
+
+// Catch-all for undefined /api routes to prevent them falling through to Vite/SPA handler
+app.all("/api/*", (req, res) => {
+  res.status(404).json({ error: `API route not found: ${req.method} ${req.path}` });
 });
 
 async function setupVite() {

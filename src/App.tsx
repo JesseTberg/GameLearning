@@ -32,6 +32,15 @@ export default function App() {
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [decks, setDecks] = useState<Deck[]>(DEFAULT_DECKS);
   const [capturedTexts, setCapturedTexts] = useState<CapturedText[]>([]);
+
+  const addGrammarPoint = (point: Omit<GrammarPoint, 'id'>) => {
+    setGrammarPoints(prev => {
+      // Avoid duplicates
+      if (prev.find(p => p.name === point.name)) return prev;
+      return [...prev, { ...point, id: Math.random().toString(36).substr(2, 9) }];
+    });
+  };
+
   const [showTranslation, setShowTranslation] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -153,6 +162,7 @@ export default function App() {
                     setCapturedTexts={setCapturedTexts}
                     showTranslation={showTranslation}
                     onToggleTranslation={() => setShowTranslation(!showTranslation)}
+                    onAddGrammar={addGrammarPoint}
                     capture={capture}
                     prepCard={prepCard}
                     setPrepCard={setPrepCard}
