@@ -128,7 +128,7 @@ app.post("/api/ai-proxy", async (req, res) => {
   }
 });
 
-// Catch-all for undefined /api routes to prevent them falling through to Vite/SPA handler
+// Catch-all for undefined /api routes AFTER all specific routes are defined
 app.all("/api/*", (req, res) => {
   res.status(404).json({ error: `API route not found: ${req.method} ${req.path}` });
 });

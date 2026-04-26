@@ -37,6 +37,7 @@ export default async function handler(req: any, res: any) {
         config,
       });
 
+      console.log("[AI Response Raw - Vercel Proxy]:", result.text);
       return res.status(200).json({ text: result.text });
     }
     
