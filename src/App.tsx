@@ -127,10 +127,10 @@ export default function App() {
             <div className="h-1.5 w-40 bg-white/5 rounded-full overflow-hidden border border-white/5">
               <div className={cn(
                 "h-full transition-all duration-700", 
-                capture.isCapturing ? "bg-green-600 w-full" : (hasKey ? "bg-blue-600/50 w-1/2" : "bg-red-900/40 w-1/5")
+                capture.isCapturing ? "bg-green-600 w-full" : (hasKey ? "bg-blue-600 w-1/2" : "bg-red-900 w-1/5")
               )} />
             </div>
-            <span className="text-[9px] font-mono text-text-dim uppercase tracking-widest opacity-50">
+            <span className="text-[9px] font-mono text-text uppercase tracking-widest">
               {capture.isCapturing ? "Synchronizing" : (hasKey ? "System Secure" : "Key Required")}
             </span>
           </div>
